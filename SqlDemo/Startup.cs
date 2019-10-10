@@ -13,6 +13,7 @@ using SqlDemo.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI;
+using SqlDemo.Services;
 
 namespace SqlDemo
 {
@@ -46,8 +47,28 @@ namespace SqlDemo
             services.AddSingleton<IProblemRepository>(new ProblemEntityFrameworkRepository(new DbContextOptionsBuilder<ProblemEntityFrameworkRepository>().UseSqlServer(Configuration["Data:CommandAPIConnection:ConnectionString"]).Options));
             services.AddSingleton<IAssignmentRepository>(new AssignmentEntityFrameworkRepository(new DbContextOptionsBuilder<AssignmentEntityFrameworkRepository>().UseSqlServer(Configuration["Data:CommandAPIConnection:ConnectionString"]).Options));
             
-            services.AddDbContext<UserEntityFrameworkRepository>(options => options.UseSqlServer(Configuration["Data:CommandAPIConnection:ConnectionString"]));
-            services.AddDefaultIdentity<IdentityUser>().AddRoles<IdentityRole>().AddDefaultUI(UIFramework.Bootstrap4).AddEntityFrameworkStores<UserEntityFrameworkRepository>();
+            services.AddDbContext<IdentityDbContext>(options => options.UseSqlServer(Configuration["Data:CommandAPIConnection:ConnectionString"]));
+            //services.AddDefaultIdentity<IdentityUser>().AddRoles<IdentityRole>().AddDefaultUI(UIFramework.Bootstrap4).AddEntityFrameworkStores<UserEntityFrameworkRepository>();
+            services.AddIdentity<IdentityUser<Guid>, IdentityRole<Guid>>().AddEntityFrameworkStores<IdentityDbContext>().AddDefaultTokenProviders();
+
+            //services.AddIdentity<IdentityUser, IdentityRole>(options => {
+            //    options.Cookies.ApplicationCookie.LoginPath = "/Account/SignIn";
+            //})
+            //services.Configure<IdentityOptions>(options => {
+            //    options.Cookies.ApplicationCookie.LoginPath = "/Account/SignIn";
+            //});
+            services.Configure<IdentityOptions>(options => {
+                options.Password.RequireDigit = false;
+                options.Password.RequiredLength = 6;
+                options.Password.RequireLowercase = false;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequireUppercase = false;                
+            });
+            //services.Configure<IdentityOptions>(options => {
+            //    options.SignIn.RequireConfirmedEmail = true;               
+            //});
+
+            services.AddTransient<IMessageService, FileMessageService>();
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
         }
@@ -67,8 +88,11 @@ namespace SqlDemo
             }
 
             app.UseHttpsRedirection();
+            //app.UseIdentity(); 
+            app.UseAuthentication();
             app.UseStaticFiles();
             app.UseCookiePolicy();
+
 
             app.UseMvc(routes =>
             {

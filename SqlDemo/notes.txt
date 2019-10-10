@@ -187,3 +187,7 @@ CreateAssignment(Assignment)
 List<Assignment> FindAssignments(ClassId); FindAssignments(UserId);
 UpdateAssignment(AssignmentId, Assignment);
 DeleteAssignment(AssignmentId)
+
+
+dotnet ef migrations add Initial --context SqlDemo.Models.IdentityDbContext
+dotnet ef database update --context SqlDemo.Models.IdentityDbContext
