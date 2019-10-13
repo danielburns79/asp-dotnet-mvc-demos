@@ -22,6 +22,11 @@ namespace SqlDemo.Controllers
             this.messageService = messageService;
         }
 
+        public IActionResult Index()
+        {
+            return View();
+        }
+
         public IActionResult Register()
         {
             return View();

@@ -1,0 +1,35 @@
+﻿@using System.Security.Claims
+@{
+    ViewData["Title"] = "Account Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Accounts</h1>
+</div>
+<div class="text-left">
+    <ul>
+        @if (User.Identity.IsAuthenticated) {
+            <li>
+                <p>
+                    <!--<a href="Logout">Logout</a>-->
+                    <form method = "post" asp-controller= "Account" asp-action = "Logout">
+                        <input type = "submit" value = "Logout">
+                    </form>
+                </p>
+            </li>
+        } else {
+            <li>
+                <p>
+                    <!--<a href="Login">Login</a>-->
+                    <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Login">Login</a>
+                </p>
+            </li>
+            <li>
+                <p>
+                    <!--<a href="Register">Register</a>-->
+                    <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Register">Register</a>
+                </p>
+            </li>
+        }
+    </ul>
+</div>
