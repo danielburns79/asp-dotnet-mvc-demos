@@ -12,14 +12,12 @@ namespace SqlDemo.Controllers
         private readonly IAssignmentRepository assignmentRepository;
         private readonly IEnrolementRepository enrolementRepository;
         private readonly IProblemRepository problemRepository;
-        private readonly IUserRepository userRepository;
 
-        public AssignmentsController(IAssignmentRepository assignmentRepository, IEnrolementRepository enrolementRepository, IProblemRepository problemRepository, IUserRepository userRepository)
+        public AssignmentsController(IAssignmentRepository assignmentRepository, IEnrolementRepository enrolementRepository, IProblemRepository problemRepository)
         {
             this.assignmentRepository = assignmentRepository;
             this.enrolementRepository = enrolementRepository;
             this.problemRepository = problemRepository;
-            this.userRepository = userRepository;
         }
 
         // POST: api/assignments

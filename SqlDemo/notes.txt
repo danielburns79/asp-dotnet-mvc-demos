@@ -9,7 +9,7 @@ GO
 SET QUOTED_IDENTIFIER ON  
 GO  
 
-DROP TABLE [dbo].[Users]
+#DROP TABLE [dbo].[Users]
 DROP TABLE [dbo].[Classes]
 DROP TABLE [dbo].[Enrolement]
 DROP TABLE [dbo].[Questions]
@@ -17,25 +17,28 @@ DROP TABLE [dbo].[Problems]
 DROP TABLE [dbo].[Assignments]
 GO
 
-CREATE TABLE [dbo].[Users](
-    [UserID] [uniqueidentifier] NOT NULL,
-    [Email] [nvarchar](max) NOT NULL,
-    [FirstName] [nvarchar](max) NOT NULL,
-    [LastName] [nvarchar](max) NOT NULL,
-    CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED (  
-        [UserID] ASC  
-    ) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY]
+#CREATE TABLE [dbo].[Users](
+#    [UserID] [uniqueidentifier] NOT NULL,
+#    [Email] [nvarchar](max) NOT NULL,
+#    [FirstName] [nvarchar](max) NOT NULL,
+#    [LastName] [nvarchar](max) NOT NULL,
+#    CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED (  
+#        [UserID] ASC  
+#    ) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+#) ON [PRIMARY]
 
+#dotnet ef migrations add Initial --context SqlDemo.Models.IdentityDbContext
+#dotnet ef database update --context SqlDemo.Models.IdentityDbContext
 
 DECLARE @danielBurnsId uniqueidentifier; SET @danielBurnsId = NEWID()
-INSERT [dbo].[Users] ([UserId], [Email], [FirstName], [LastName]) VALUES (@danielBurnsId, 'danielburns79@gmail.com', 'Dan', 'Burns')
+INSERT [dbo].[IdentityUser] ([Id], [UserName], ,[NormalilzedUserName], [Email], [NormalizedEmail], [EmailConfirmed], ) VALUES (@dnaielBurnsId, 'danielburns79@gmail.com', 'DANIELBURNS79@GMAIL.COM', 'danielburns79@gmail.com', 'DANIELBURNS79@GMAIL.COM', 1)
+#INSERT [dbo].[Users] ([UserId], [Email], [FirstName], [LastName]) VALUES (@danielBurnsId, 'danielburns79@gmail.com', 'Dan', 'Burns')
 DECLARE @bowieBurnsId uniqueidentifier; SET @bowieBurnsId = NEWID()
-INSERT [dbo].[Users] ([UserId], [Email], [FirstName], [LastName]) VALUES (@bowieBurnsId, 'bowie.burns@dog.com', 'Bowie', 'Burns')
+#INSERT [dbo].[Users] ([UserId], [Email], [FirstName], [LastName]) VALUES (@bowieBurnsId, 'bowie.burns@dog.com', 'Bowie', 'Burns')
 DECLARE @melissaStrandId uniqueidentifier; SET @melissaStrandId = NEWID()
-INSERT [dbo].[Users] ([UserId], [Email], [FirstName], [LastName]) VALUES (@melissaStrandId, 'melissa.strand@gmail.com', 'Melissa', 'Strand')
+#INSERT [dbo].[Users] ([UserId], [Email], [FirstName], [LastName]) VALUES (@melissaStrandId, 'melissa.strand@gmail.com', 'Melissa', 'Strand')
 DECLARE @doogerBurnsId uniqueidentifier; SET @doogerBurnsId = NEWID()
-INSERT [dbo].[Users] ([UserId], [Email], [FirstName], [LastName]) VALUES (@doogerBurnsId, 'dooger.burns@dog.com', 'Dooger', 'Burns')
+#INSERT [dbo].[Users] ([UserId], [Email], [FirstName], [LastName]) VALUES (@doogerBurnsId, 'dooger.burns@dog.com', 'Dooger', 'Burns')
 
 
 CREATE TABLE [dbo].[Classes](

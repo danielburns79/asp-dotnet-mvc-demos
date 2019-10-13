@@ -151,6 +151,6 @@ namespace SqlDemo.Controllers
         {
             await this.signInManager.SignOutAsync();
             return Redirect("~/");
-        }      
+        }    
     }
 }

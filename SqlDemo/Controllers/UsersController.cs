@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using SqlDemo.Models;
 using System.Linq;
+using Microsoft.AspNetCore.Identity;
 
 namespace SqlDemo.Controllers
 {
@@ -10,39 +11,38 @@ namespace SqlDemo.Controllers
     [ApiController]
     public class UsersController : ControllerBase
     {
-        private readonly IUserRepository userRepository;
+        private readonly IIdentityUserRepository identityUserRepository;
         private readonly IClassRepository classRepository;
         private readonly IEnrolementRepository enrolementRepository;
 
-        //public UsersController(IUserRepository userRepository) => this.userRepository = userRepository;
-        public UsersController(IUserRepository userRepository, IClassRepository classRepository, IEnrolementRepository enrolementRepository)
+        public UsersController(IIdentityUserRepository identityUserRepository, IClassRepository classRepository, IEnrolementRepository enrolementRepository)
         {
-            this.userRepository = userRepository;
+            this.identityUserRepository = identityUserRepository;
             this.classRepository = classRepository;
             this.enrolementRepository = enrolementRepository;
         }
 
         // POST: api/users
         [HttpPost]
-        public ActionResult<User> PostUser(User user)
+        public ActionResult<IdentityUser<Guid>> PostUser(IdentityUser<Guid> user)
         {
-            this.userRepository.CreateUser(user);
-            return CreatedAtAction("PostUser", new User{UserId = user.UserId}, user);
+            this.identityUserRepository.CreateUser(user);
+            return CreatedAtAction("PostUser", new IdentityUser<Guid>{Id = user.Id}, user);
         }
 
         // GET: api/users
         [Microsoft.AspNetCore.Authorization.Authorize]
         [HttpGet]
-        public ActionResult<IEnumerable<User>> GetUsers()
+        public ActionResult<IEnumerable<IdentityUser<Guid>>> GetUsers()
         {
-            return new ActionResult<IEnumerable<User>>(this.userRepository.GetUsers());
+            return new ActionResult<IEnumerable<IdentityUser<Guid>>>(this.identityUserRepository.GetUsers());
         }
 
         // GET: api/users/n
         [HttpGet("{id:guid}")]
-        public ActionResult<User> GetUser(Guid id)
+        public ActionResult<IdentityUser<Guid>> GetUser(Guid id)
         {
-            var user = this.userRepository.GetUser(id);
+            var user = this.identityUserRepository.GetUser(id);
             if (user == null)
             {
                 return NotFound();
@@ -52,47 +52,47 @@ namespace SqlDemo.Controllers
 
         // GET: api/users/nameoremail
         [HttpGet("{nameOrEmail}")]
-        public ActionResult<IEnumerable<User>> GetUsers(string nameOrEmail)
+        public ActionResult<IEnumerable<IdentityUser<Guid>>> GetUsers(string nameOrEmail)
         {
             if (nameOrEmail.Contains("@"))
             {
-                return new ActionResult<IEnumerable<User>>(this.userRepository.FindUsersByEmail(nameOrEmail));
+                return new ActionResult<IEnumerable<IdentityUser<Guid>>>(this.identityUserRepository.FindUsersByEmail(nameOrEmail));
             }
             else
             {
-                return new ActionResult<IEnumerable<User>>(this.userRepository.FindUsersByFirstAndOrLastName(nameOrEmail));
+                return new ActionResult<IEnumerable<IdentityUser<Guid>>>(this.identityUserRepository.FindUsersByFirstAndOrLastName(nameOrEmail));
             }
         }
 
         // GET: api/users/class/n
         [HttpGet("class/{classId:guid}")]
-        public ActionResult<IEnumerable<User>> GetUsersByClassId(Guid classId)
+        public ActionResult<IEnumerable<IdentityUser<Guid>>> GetUsersByClassId(Guid classId)
         {
-            return new ActionResult<IEnumerable<User>>(this.userRepository.FindUsersByClass(classId, this.enrolementRepository));
+            return new ActionResult<IEnumerable<IdentityUser<Guid>>>(this.identityUserRepository.FindUsersByClass(classId, this.enrolementRepository));
         }
 
         // PUT: api/users/n
         [HttpPut("{id:guid}")]
-        public ActionResult PutUser(Guid id, User user)
+        public ActionResult PutUser(Guid id, IdentityUser<Guid> user)
         {
-            if (id != user.UserId)
+            if (id != user.Id)
             {
                 return BadRequest();
             }
-            this.userRepository.UpdateUser(user);
+            this.identityUserRepository.UpdateUser(user);
             return NoContent();
         }
 
         // DELETE: api/users/n
         [HttpDelete("{id:guid}")]
-        public ActionResult<User> DeleteUser(Guid id)
+        public ActionResult<IdentityUser<Guid>> DeleteUser(Guid id)
         {
-            var user = this.userRepository.GetUser(id);
+            var user = this.identityUserRepository.GetUser(id);
             if (user == null)
             {
                 return NotFound();
             }
-            this.userRepository.DeleteUser(id);
+            this.identityUserRepository.DeleteUser(id);
             return user;
         }
     }

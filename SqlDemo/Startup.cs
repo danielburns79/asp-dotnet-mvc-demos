@@ -36,11 +36,7 @@ namespace SqlDemo
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
-            // UserSqlRepository does direct SQL queries, UserContext uses entity framework
-            //services.AddSingleton<IUserRepository>(new UserSqlRepository(Configuration["Data:CommandAPIConnection:ConnectionString"]));
-            // the follow is how to initialize UsersController with a DbContext, but we're going to use IUserRepository instead
-            //services.AddDbContext<UserContext>(opt => opt.UseSqlServer(Configuration["Data:CommandAPIConnection:ConnectionString"]));
-            services.AddSingleton<IUserRepository>(new UserEntityFrameworkRepository(new DbContextOptionsBuilder<UserEntityFrameworkRepository>().UseSqlServer(Configuration["Data:CommandAPIConnection:ConnectionString"]).Options));
+            services.AddSingleton<IIdentityUserRepository>(new IdentityDbContext(new DbContextOptionsBuilder<IdentityDbContext>().UseSqlServer(Configuration["Data:CommandAPIConnection:ConnectionString"]).Options));
             services.AddSingleton<IClassRepository>(new ClassEntityFrameworkRepository(new DbContextOptionsBuilder<ClassEntityFrameworkRepository>().UseSqlServer(Configuration["Data:CommandAPIConnection:ConnectionString"]).Options));
             services.AddSingleton<IEnrolementRepository>(new EnrolementEntityFrameworkRepository(new DbContextOptionsBuilder<EnrolementEntityFrameworkRepository>().UseSqlServer(Configuration["Data:CommandAPIConnection:ConnectionString"]).Options));
             services.AddSingleton<IQuestionRepository>(new QuestionEntityFrameworkRepository(new DbContextOptionsBuilder<QuestionEntityFrameworkRepository>().UseSqlServer(Configuration["Data:CommandAPIConnection:ConnectionString"]).Options));
