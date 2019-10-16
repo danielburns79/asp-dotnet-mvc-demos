@@ -14,6 +14,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI;
 using SqlDemo.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Authorization;
 
 namespace SqlDemo
 {
@@ -65,6 +67,12 @@ namespace SqlDemo
             //});
 
             services.AddTransient<IMessageService, FileMessageService>();
+
+            services.AddMvc(o => 
+            {
+                var policy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
+                o.Filters.Add(new AuthorizeFilter(policy));
+            });
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
         }

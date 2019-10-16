@@ -1,0 +1,33 @@
+@using System.Security.Claims
+@{
+    ViewData["Title"] = "Classes";
+}
+
+<table id="classes" class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Name</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+
+@section scripts
+{
+    <script>
+        $(document).ready(function () {
+            $.ajax({
+                headers: {
+                    "Accept":"application/json",
+                },   url:"/api/classes",
+                success: function(response) {
+                    response.forEach(function(element){
+                        $("#classes").append("<tr><td>"+element.classId+"</td><td>"+element.className+"</td></tr>");
+                    });
+                }
+            });
+        });
+    </script>
+}

@@ -5,9 +5,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using SqlDemo.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SqlDemo.Controllers
 {
+    [AllowAnonymous]
     public class HomeController : Controller
     {
         public IActionResult Index()
@@ -16,6 +18,11 @@ namespace SqlDemo.Controllers
         }
 
         public IActionResult Privacy()
+        {
+            return View();
+        }
+
+        public IActionResult Classes()
         {
             return View();
         }

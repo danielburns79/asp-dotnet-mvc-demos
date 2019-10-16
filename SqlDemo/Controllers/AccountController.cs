@@ -6,9 +6,13 @@ using System.Linq;
 using Microsoft.AspNetCore.Identity;
 using SqlDemo.Services;
 using System.Threading.Tasks;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using SqlDemo.ViewModels;
 
 namespace SqlDemo.Controllers
 {
+    [AllowAnonymous]
     public class AccountController : Controller
     {
         private readonly UserManager<IdentityUser<Guid>> userManager;
@@ -22,9 +26,12 @@ namespace SqlDemo.Controllers
             this.messageService = messageService;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            AccountViewModel model = new AccountViewModel();
+            model.User = await this.userManager.GetUserAsync(HttpContext.User);
+            model.Claims = await this.userManager.GetClaimsAsync(model.User);
+            return View(model);
         }
 
         public IActionResult Register()
@@ -62,6 +69,39 @@ namespace SqlDemo.Controllers
             await this.messageService.Send(email, "Verify your email", $"Click <a href=\"{tokenVerificationUrl}\">here</a> to verify your email");
 
             return Content("Check your email for a verification link");
+        }
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> AddRole(string role)
+        {
+            Console.WriteLine("\r\nAccountController::AddRole: role={0}\r\n", role);
+            var user = await this.userManager.GetUserAsync(HttpContext.User);
+            if (user == null)
+            {
+                throw new InvalidOperationException();
+            }
+            Console.WriteLine("\r\nAccountController::AddRole: role={0}, user={1}\r\n", role, user);
+            var claims = await this.userManager.GetClaimsAsync(user);
+            if (claims.Any(c => c.Value.Equals(role)))
+            {
+                return Content("user already has role");
+            }
+            await this.userManager.AddClaimAsync(user, new Claim(ClaimTypes.Role, role));
+            return RedirectToAction("Index");
+        }
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> RemoveRole(string role)
+        {
+            Console.WriteLine("\r\nAccountController::RemoveRole: role={0}\r\n", role);
+            var user = await this.userManager.GetUserAsync(HttpContext.User);
+            if (user == null)
+            {
+                throw new InvalidOperationException();
+            }
+            Console.WriteLine("\r\nAccountController::RemoveRole: role={0}, user={1}\r\n", role, user);
+            await this.userManager.RemoveClaimAsync(user, new Claim(ClaimTypes.Role, role));
+            return RedirectToAction("Index");
         }
 
         public async Task<IActionResult> VerifyEmail(string id, string token)

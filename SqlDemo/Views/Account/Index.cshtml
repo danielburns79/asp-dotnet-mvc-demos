@@ -1,4 +1,5 @@
 ﻿@using System.Security.Claims
+@model SqlDemo.ViewModels.AccountViewModel
 @{
     ViewData["Title"] = "Account Page";
 }
@@ -9,14 +10,41 @@
 <div class="text-left">
     <ul>
         @if (User.Identity.IsAuthenticated) {
-            <li>
-                <p>
-                    <!--<a href="Logout">Logout</a>-->
-                    <form method = "post" asp-controller= "Account" asp-action = "Logout">
-                        <input type = "submit" value = "Logout">
+            <table>
+                <tr><td>
+                    @Html.DisplayTextFor(m => m.User.UserName)
+                </td></tr>
+                <tr><td>
+                    <p>
+                        <!--<a href="Logout">Logout</a>-->
+                        <form method="POST" asp-controller="Account" asp-action="Logout">
+                            <input type="submit" value="Logout">
+                        </form>
+                    </p>
+                </td></tr>                
+                @foreach(var claim in Model.Claims)
+                {
+                <tr><td>
+                    <form method="POST" asp-controller="Account" asp-action="RemoveRole">
+                        <label for="role">@claim.Value</label>
+                        <input hidden disabled type="text" id="role" name="role" value="@claim.Value">
+                        <input type="submit" value="Remove Role">
                     </form>
-                </p>
-            </li>
+                </td></tr>
+                }
+                <tr><td>
+                    <form method="POST" asp-controller="Account" asp-action="AddRole">
+                        <!--<input type="text" name="role" value="Administrator">-->
+                        <select name="role">
+                            <option value="Administrator">Administrator</option>
+                            <option value="Researcher">Researcher</option>
+                            <option value="Teacher">Teacher</option>
+                            <option value="Student">Student</option>
+                        </select>
+                        <input type="submit" value="Add Role">
+                    </form>
+                </td></tr>
+            </table>
         } else {
             <li>
                 <p>

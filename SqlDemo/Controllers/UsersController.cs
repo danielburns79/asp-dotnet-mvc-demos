@@ -31,7 +31,7 @@ namespace SqlDemo.Controllers
         }
 
         // GET: api/users
-        [Microsoft.AspNetCore.Authorization.Authorize]
+        //[Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrator")]
         [HttpGet]
         public ActionResult<IEnumerable<IdentityUser<Guid>>> GetUsers()
         {
