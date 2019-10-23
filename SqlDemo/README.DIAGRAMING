@@ -1,0 +1,287 @@
+###############################################################################
+
+nouns - person, place, or thing
+pronouns - represent noun
+verbs - action words
+adjectives - descriptions words that apply to nouns
+adverbs - description words that apply to verbs, adjectives, or other adverbs
+participles - words formed from verbs that act like adjectives or nouns
+conjunctions - join clauses within the same clause
+prepositions - tell you how nouns relate to one another
+articles - a, an, the
+
+subject - noun or pronoun performing the verb
+verb - the action
+direct object - noun or pronoun that is teh recipient of the verb
+
+horizontal line with subject verb direct object
+vertical line bisecting horizontal line with subject to left and verb to right
+vertical line stopping at horizontal line with direct object to right
+
+indirect verb - could take a prepositions
+
+diagonal line coming off modified word with indirect verb
+
+predicate nominative - noun, pronoun, or adjective that refers to the subject
+predicate adjective - ?
+linking verb - the verb preceding the predicate nominativie or adject, such as the forms of to be (is, are, was, etc) or sense words (looks, smells, tastes, etc)
+
+diagonal slash stopping at horizontal line with predicate nominative/adjective to the right
+
+adjective - (see above)
+adverb - (see above)
+article - (see above)
+possessive - ?
+
+diagonal line below the word they modify with adjective/adverb/article/possessive
+
+preposition - ?
+
+diagonal line below the word they modify with preposition to horizontal line with (recursive)
+
+conjunction - (see above)
+
+bent, broken line connecting the verbs or two independent clauses
+split line joined by broken line for words within clause
+two existing diagonal lines joined by broken line for words within clause
+
+appositive - redefine or rename other words
+
+parenthesis around word to the right of words modified
+
+infinitive phrases - basic forms of verbs, often beginning with the word to, as in to see, to walk, to eat
+
+pedastal to horizontal line beginning with diagonal and a vertical line ending at horizontal line with verb to the left and object to the right
+
+gerund - verbs ending in -ing that act as nouns, but often take direct objects (e.g. eating vegetables)
+
+pedestal to horizontal line beginning with staircase and vertical line ending at horizontal line with direct object to the right
+staircase off diagonal line to horizontal line and vertical line ending at horizontal line with direct object to the right if gerund is object of preposition
+
+noun phrase - phrase introduced by expletives (like that or which) that act as a noun
+
+pedastal to horizontal line with (resursive) and broken line to expletive from verb
+
+
+###############################################################################
+
+1 subject - on hortzontal before vertical bisect
+2 verb - on horizontal after vertical bisect
+3 verb phrase - on horizontal after vertical bisect
+4 direct object - on horizontal after vertical stop
+5 indirect object - on diagonal below word
+6 predicate nominative - on horizontal after slash
+7 predicate adjective - on horizontal after slash
+8 participle - curved word on bent, slanted below word
+9 adjective - on diagonal below word
+10 adverb - on diagonal below word
+11 article - on diagonal below word
+12 possessive - on diagonal below word
+13 preposition - on diagonal below word with horizontal
+14 prepositional object - on horizontal of preposition
+15 conjunction (independent clauses) - on broken line between verbs (recurse)
+16 conjunction (within clause) - on broken line between words
+17 appositive - in parentheses to the right of word
+18 infinitive phrases - on pedestal beginning with diagonal
+19 gerund - on pedestal beginning with staircase
+20 gerund (object of preposition) - on staircase
+21 expletive - on horizontal connected to modified word via broken
+22 noun phrase - on pedestal with horizontal (recurse) and broken line from explective to verb
+
+###############################################################################
+
+<subject /> <s />
+<verb /> <v />
+<verb-phrase /> <vp />
+<direct-object /> <do />
+<indirect-object /> <io />
+<predicate-nominative /> <pn />
+<predicate-adjective /> <pa />
+<participle> <part />
+<adjective /> <adj />
+<adverb /> <adv />
+<article /> <art />
+<possessive /> <pos />
+<preposition /> <prep />
+<object-of-preposition /> <obj />
+<conjunction /> <conj />
+<appositive /> <app />
+<infinitive-phrase /> <ip />
+<gerund /> <g />
+<gerund-prepositional-object /> <gpo />
+<expletive /> <exp />
+<noun-phrase /> <np />
+<group /> <ger />
+
+###############################################################################
+
+Vegetables disgust Felipe.
+<s>Vegetables</s><v>disgust</v><do>Felipe</do>.
+
+The farmers gave their kids fresh vegetables.
+<g>
+    <art>The</art>
+    <s>farmers</s>
+</g>
+<g>
+    <v>gave</v>
+    <g>
+        <pos>their</pos>
+        <io>kids</io>
+    </g>
+</g>
+<g>
+    <adj>fresh</adj>
+    <do>vegetables</do>
+</g>
+
+Vegetables are disgusting.
+<s>Vegetables</s>
+<v>are</v>
+<pa>disgusting</pa>.
+
+The green vegetables are always disgusting.
+<g>
+    <art>The</art>
+    <adj>green</adj>
+    <s>vegetables</s>
+</g>
+<v>are</v>
+<g>
+    <adj>always></adj>
+    <pa>disgusting</pa>
+</g>
+
+Working farmers enjoy vegetables.
+<g>
+    <part>Working</part>
+    <s>farmers</s>
+</g>
+<v>enjoy</v>
+<do>vegetables</do>.
+
+The kids threw the vegetables in the trash.
+<g>
+    <art>The</art>
+    <s>kids</s>
+</g>
+<g>
+    <v>threw</v>
+    <g>
+        <art>the</art>
+        <do>vegetables</do>
+    </g>
+    <prep>in</prep>
+    <g>
+        <art>the</art>
+        <obj>trash</obj>
+    </g>
+</g>
+
+The green vegetables are always disgusting and I hate them.
+<g>
+    <g>
+        <art>The</art>
+        <adj>green</adj>
+        <s>vegetables</s>
+    </g>    
+    <v>are</v>
+    <g>
+        <adj>always</adj>
+        <pa>disgusting</pa>
+    </g> 
+</g>
+<conj>and</conj>
+<g>
+    <s>I</s>
+    <v>hate</v>
+    <do>them<do>
+</g>
+
+I like fruits and vegetables.
+<s>I</s>
+<v>like</v>
+<g>
+    <do>fruits</do>
+    <conj>and</conj>
+    <do>vegetables</do>
+</g>
+
+Green and yellow vegetables are always disgusting.
+<g>
+    <adj>Green</adj>
+    <conj>and</conj>
+    <adj>yellow</adj>
+</g>
+<s>vegetables</s>
+<v>are</v>
+<g>
+    <adj>always</adj>
+    <pa>disgusting</pa>
+</g>
+
+An unabashed herbivore, I like fruits and vegetables.
+<g>
+    <g>
+        <art>An</art>
+        <adj>unabashed</adj>
+        <app>herbivore</app>
+    </g>
+    <s>I</s>
+</g>
+<v>like</v>
+<g>
+    <do>fruits</do>
+    <conj>and</conj>
+    <do>vegetables</do>
+</g>
+
+I like to eat vegetables.
+<s>I</s>
+<v>like</s>
+<g>
+    <ip>to eat</ip>
+    <obj>vegetables</obj>
+</g>
+
+Eating vegetables is good for you.
+<g>
+    <ger>Eating</ger>
+    <s>vegetables</s>
+</g>
+<v>is</v>
+<g>
+    <pa>good</pa>
+    <prep>for</prep>
+    <obj>you</obj>
+</g>
+
+You can achieve a healthier lifestyle by eating vegetables.
+<s>You</s>
+<g>
+    <vp>can achieve</vp>
+    <g>
+        <art>a</art>
+        <adj>healthier</aj>
+        <do>lifestyle</do>
+    </g>
+    <prep>by</prep>
+    <g>
+        <ger>eating</ger>
+        <obj>vegetables</obj>
+    </g>
+</g>
+
+I wish that she ate more vegetables.
+<s>I</s>
+<v>wish</v>
+<g>
+    <exp>that</exp>
+    <s>she</s>
+    <v>ate</v>
+    <g>
+        <adj>more</adj>
+        <do>vegetables</do>
+    </g>
+</g>
+

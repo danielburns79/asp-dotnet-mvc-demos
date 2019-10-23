@@ -1,0 +1,8 @@
+editor: vscode
+build environment: .net core 2.2
+db:
+    MS SQL Server, see README.SQL
+    dotnet ef migrations add Initial --context SqlDemo.Models.IdentityDbContext
+    dotnet ef database update --context SqlDemo.Models.IdentityDbContext
+build:  dotnet build
+run:  dotnet run

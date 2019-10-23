@@ -8,3 +8,150 @@
     <h1 class="display-4">@welcomeMessage</h1>
     <!--<p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>-->
 </div>
+
+<style>
+    .part-button{
+        border: 3px solid #52A7D3;
+        background-color: #52A7D3;
+        color: #000000;
+    }
+    .part-button.active {
+        border: 3px solid grey;
+        background-color: grey;
+        color: #FFF;
+    }
+</style>
+
+<div id="diagram">
+    <div id="parts">
+    </div>
+    <div id='sentence'>
+    </div>
+</div>
+
+
+@section scripts
+{
+    <script>
+        function apply_part_to_word(part, word)
+        {
+            var _word = word.innerText;
+            word.innerText = "<" + part + ">" + _word + "</" + part + ">";
+            console.log("apply_part_to_word: " + part + " -> " + _word);
+        }
+        //function hover(ev) {
+            //console.log(ev.target.id);
+        //}
+        //function dragstart_handler(ev) {
+            // Add the target element's id to the data transfer object
+           // ev.dataTransfer.setData("text/plain", ev.target.id);
+        //    ev.dataTransfer.setData("text/plain", ev.target.innerText);
+            //console.log(ev);
+        //};
+        //function dragover_handler(ev) {
+        //    ev.preventDefault();
+            //ev.dataTransfer.dropEffect = "move";
+            //console.log(ev);
+        //};
+        //function drop_handler(ev) {
+        //    ev.preventDefault();
+            // Get the id of the target and add the moved element to the target's DOM
+        //    var droppedText = ev.dataTransfer.getData("text/plain");
+        //    apply_part_to_word(droppedText, ev.currentTarget);
+        //};
+
+        $(document).ready(function() {
+            //$("#sentence").html(sentence.text().replace(/\b(\w+)\b/g, "<span ondragover=\"dragover_handler(event)\" ondrop=\"drop_handler(event)\">$1</span>"));
+
+            var sentence = "This is a test.";
+            var words = sentence.split(/[ ,]+/);
+            words.forEach(function(word) {
+                var span = $('<span />').appendTo('#sentence');
+                span.attr('class', 'word');
+                //span.attr('ondragover', 'dragover_handler(event)');
+                //span.attr('ondrop', 'drop_handler(event)');
+                span.text(word);
+                var space = $('<span />').appendTo('#sentence');
+                space.attr('class', 'space');
+                space.text(" ");
+            });
+            $('#sentence span').droppable({
+                drop: function(event, ui) {
+                    console.log("drop: " + event.currentTarget.activeElement.innerText + " -> " + event.target.innerText);
+                    apply_part_to_word(event.currentTarget.activeElement.innerText, event.target);
+                },
+                dragenter: function(event, ui) {
+                    console.log("dragenter: " + event + " " + ui + " " + this);
+                }
+            });
+            $('#sentence .word').click(function() {
+                var activeButton = $('#parts .active')
+                console.log("#sentence .word click: "+ $(this) + " -> " + activeButton.text());
+                if (activeButton.text())
+                {
+                    apply_part_to_word(activeButton.text(), this);
+                }
+            });
+
+            var parts = [
+                ['subject', 's'],
+                ['verb', 'v'],
+                ['verb phrase', 'vp'],
+                ['direct object', 'do'],
+                ['indirect object', 'io'],
+                ['predicate nominative', 'pn'],
+                ['predicate adjective', 'pa'],
+                ['participle', 'part'],
+                ['adjective', 'adj'],
+                ['adverb', 'adv'],
+                ['article', 'art'],
+                ['possessive', 'pos'],
+                ['preposition', 'prep'],
+                ['prepositional-object', 'po'],
+                ['conjunction', 'conj'],
+                ['appositive', 'app'],
+                ['infinitive phrase', 'ip'],
+                ['gerund', 'ger'],
+                ['expletive', 'exp'],
+                ['noun phrase', 'np'] ];
+            parts.forEach(function(part) {
+                var element = $('<button />').appendTo('#parts');
+                element.attr('id', part[0]);
+                //element.attr('ondragstart', 'dragstart_handler(event)');
+                //element.attr('draggable', 'true');
+                element.attr('class', 'part-button');
+                //element.attr('onclick');
+                //element.attr('onhover', 'hover(event)');
+                //element.hover(hover);
+                element.text(part[1]);
+                var space = $('<span />').appendTo('#parts');
+                space.text(' ');
+                //console.log("html++ " + element);
+            });
+            $('#parts button').click(function() {
+                console.log("#parts button click: button=" + $(this).text());
+                //$(this).effect("highlight", {color: 'grey'});
+                $('#parts button').removeClass("active");
+                $(this).addClass("active");
+            });
+            $('#parts button').draggable({
+                 cancel: '.no-drag',
+                 revert: true,
+                 opacity: 0.3,
+                 //start: function(event, ui) {
+                 //    console.log("start event=" + event + " ui=" + ui);
+                 //    //event.data = event.currentTarget;
+                 //}
+            });
+
+            /*$('#sentence span').hover(
+                function() { 
+                    $(this).css('background-color','#ffff66');
+                },
+                function() { 
+                    $(this).css('background-color',''); 
+                }
+            );*/
+        });
+    </script>
+}
