@@ -78,7 +78,7 @@ pedastal to horizontal line with (resursive) and broken line to expletive from v
 11 article - on diagonal below word
 12 possessive - on diagonal below word
 13 preposition - on diagonal below word with horizontal
-14 prepositional object - on horizontal of preposition
+14 prepositional object - on horizontal at bottom of preposition diagonal
 15 conjunction (independent clauses) - on broken line between verbs (recurse)
 16 conjunction (within clause) - on broken line between words
 17 appositive - in parentheses to the right of word

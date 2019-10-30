@@ -10,7 +10,13 @@
 </div>
 
 <style>
-    .part-button{
+    .diagram {
+        height: 1000px;
+        width: 1000px;
+        border: 2px solid black;
+        background-color: grey;
+    }
+    .part-button {
         border: 3px solid #52A7D3;
         background-color: #52A7D3;
         color: #000000;
@@ -20,12 +26,50 @@
         background-color: grey;
         color: #FFF;
     }
+    .word-span {
+        /* default */
+    }
+    .word-span.active {
+        background-color: grey;
+    }
+    .part-s {
+        background-color: red;
+    }
+    .part-v {
+        background-color: blue;
+    }
+    .part-art {
+        background-color: yellow;
+    }
+    .part-do {
+        background-color: orange;
+    }
+    .part-line-2 {
+        position: absolute; /* allows to position it anywhere */
+        width: 3px; /* your chosen line width */
+        background-color: #06a; /* line color */
+        z-index: 1000; /* make sure this is above your other elements */
+        -webkit-transform-origin: top left;
+        -moz-transform-origin: top left;
+        -o-transform-origin: top left;
+        -ms-transform-origin: top left;
+        transform-origin: top left;
+        /* transform-origin sets rotation around top left (instead of the geometrical center) */
+    }
+    .part-line {
+        transform-origin: 0 100%;
+        height: 3px; /* Line width of 3 */
+        width: 3px;
+        background: #000; /* Black fill */
+        }
 </style>
 
-<div id="diagram">
-    <div id="parts">
+<div id='diagram-container'>
+    <div id='parts'>
     </div>
     <div id='sentence'>
+    </div>
+    <div id='diagram' class='diagram'>
     </div>
 </div>
 
@@ -33,64 +77,286 @@
 @section scripts
 {
     <script>
-        function apply_part_to_word(part, word)
-        {
-            var _word = word.innerText;
-            word.innerText = "<" + part + ">" + _word + "</" + part + ">";
-            console.log("apply_part_to_word: " + part + " -> " + _word);
+        function createLine(x1,y1, x2,y2){
+            var length = Math.sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
+            var angle  = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+            var transform = 'rotate('+angle+'deg)';
+            var line = $('<div>')
+                .addClass('part-line')
+                .css({
+                    'position': 'absolute',
+                    'transform': transform
+                })
+                .width(length)
+                .offset({left: x1, top: y1})
+                // TODO: can I move this droppable to a better place?
+                .droppable({
+                    drop: function(event, ui) {
+                        var draggable = $(ui.draggable);
+                        console.log("div part-line droppable drop : " + this.id);
+                        if (draggable.hasClass('word-span'))
+                        {
+                            console.log("div part-line droppable drop : " + this.id + " -> " + draggable.text());
+                            createWord(draggable, this);
+                        }
+                    }
+                });
+            return line;
         }
-        //function hover(ev) {
-            //console.log(ev.target.id);
-        //}
-        //function dragstart_handler(ev) {
-            // Add the target element's id to the data transfer object
-           // ev.dataTransfer.setData("text/plain", ev.target.id);
-        //    ev.dataTransfer.setData("text/plain", ev.target.innerText);
-            //console.log(ev);
-        //};
-        //function dragover_handler(ev) {
-        //    ev.preventDefault();
-            //ev.dataTransfer.dropEffect = "move";
-            //console.log(ev);
-        //};
-        //function drop_handler(ev) {
-        //    ev.preventDefault();
-            // Get the id of the target and add the moved element to the target's DOM
-        //    var droppedText = ev.dataTransfer.getData("text/plain");
-        //    apply_part_to_word(droppedText, ev.currentTarget);
-        //};
+        function createPart(part, pageX, pageY)
+        {
+            var container = $('<div />')
+                .addClass('diagram-part')
+                .attr('id', 'diagram-part-'+part);
+            switch(part)
+            {
+                case 's':
+                    // on hortzontal before vertical bisect
+                    createLine(pageX, pageY, pageX + 100, pageY)
+                        .attr('id', 'diagram-part-s-horizontal-line')
+                        .addClass('part-line-horizontal')
+                        .appendTo(container);
+                    break;
+                case 'v':
+                case 'vp':
+                    // on horizontal after vertical bisect
+                    createLine(pageX, pageY, pageX + 100, pageY)
+                        .attr('id', 'diagram-part-'+part+'-horizontal-line')
+                        .addClass('part-line-horizontal')
+                        .appendTo(container);
+                    createLine(pageX, pageY - 20, pageX, pageY + 5)
+                        .attr('id', 'diagram-part-'+part+'-vertical-line')
+                        .addClass('part-line-vertical')
+                        .appendTo(container);
+                    break;
+                case 'do':
+                    // on horizontal after vertical stop
+                    createLine(pageX, pageY, pageX + 100, pageY)
+                        .attr('id', 'diagram-part-do-horizontal-line')
+                        .addClass('part-line-horizontal')
+                        .appendTo(container);
+                    createLine(pageX, pageY - 20, pageX, pageY)
+                        .attr('id', 'diagram-part-do-vertical-line')
+                        .addClass('part-line-vertical')
+                        .appendTo(container);
+                    break;
+                case 'io':
+                    // on diagonal below word
+                    // TODO
+                    break;
+                case 'pn':
+                case 'pa':
+                    // on horizontal after slash
+                    // TODO
+                    break;
+                case 'part':
+                    // curved word on bent, slanted below word
+                    // TODO
+                    break;
+                case 'adj':
+                case 'adv':
+                case 'art':
+                case 'pos':
+                case 'prep':
+                    // on diagonal below word
+                    createLine(pageX, pageY, pageX + 100, pageY + 100)
+                        .attr('id', 'diagram-part-'+part+'-diagonal-line')
+                        .addClass('part-line-diagonal')
+                        .appendTo(container);
+                    break;
+                case 'po':
+                    // on horizontal at bottom of preposition diagonal
+                    // TODO
+                    break;
+                case 'conj':
+                    // on broken line between words
+                    // TODO
+                    break;
+                case 'app':
+                    // in parentheses to the right of word
+                    // TODO
+                    break;
+                case 'ip':
+                    // on pedestal beginning with diagonal
+                    // TODO
+                    break;
+                case 'ger':
+                    // on pedestal beginning with staircase OR on staircase (object of preposition)
+                    // TODO
+                    break;
+                case 'exp':
+                    // on horizontal connected to modified word via broken
+                    // TODO
+                    break;
+                case 'np':
+                    // on pedestal with horizontal (recurse) and broken line from explective to verb
+                    // TODO
+                    break;
+            }
+            return container;
+        }
+        function addPart(part, event, target)
+        {
+            // TODO: draw the parts as one graphic
+            var pageX = event.originalEvent.pageX;
+            var pageY = event.originalEvent.pageY;
+            switch (part)
+            {
+                case 's':
+                    // a subject requires a clause
+                    target = $('<div />')
+                        .addClass('clause')
+                        .attr('id', 'clause')
+                        .appendTo(target);
+                    console.log("addPart: part=s target=" + target.id);
+                    break;
+                case 'v':
+                case 'vp':
+                case 'do':
+                case 'pn':
+                case 'pa':
+                    // a verb, verb phrase, direct object, predicate nominative, or predicate adjective
+                    // applies to an existing clause
+                    target = $(target).closest('.clause')[0] || $('.clause')[0];
+                    console.log("addPart: part=" + part + " target=" + target.id);
+                    if (!target)
+                    {
+                        return;
+                    }
+                    var lastLine = $(target).children('.diagram-part:last-child').children('.part-line-horizontal');
+                    console.log("addPart: lastLine=" + lastLine[0].id);
+                    pageX = lastLine.offset().left + lastLine.width();
+                    pageY = lastLine.offset().top;
+                    console.log("addPart: pageX=" + pageX + " pageY=" + pageY);
+                    break;
+                case 'conj':
+                    // a conjunction applies to two or more existing parts
+                    // TODO
+                    return;
+                    break;
+                case 'io':
+                case 'part':
+                case 'adj':
+                case 'adv':
+                case 'art':
+                case 'pos':
+                case 'prep':
+                case 'po':
+                case 'app':
+                case 'ip':
+                case 'ger':
+                case 'exp':
+                case 'np':
+                default:
+                    // an indirect object, participal, adjective, adverb, article, possessive, preposition, propositional object, appositive, infinitive phrase, gerund, explective, or noun phrase
+                    // applies to an existing part
+                    target = $(target).closest('.diagram-part')[0];
+                    console.log("addPart: part=" + part + " target=" + target || target.id);
+                    if (!target)
+                    {
+                        return;
+                    }
+                    switch (part)
+                    {
+                        case 'io':
+                        case 'adj':
+                        case 'adv':
+                        case 'art':
+                        case 'pos':
+                        case 'prep':
+                            // on diagonal below word
+                            var lastLine = $(target).children('.part-line-horizontal');
+                            console.log("addPart: lastLine=" + lastLine[0].id);
+                            pageX = lastLine.offset().left + (lastLine.width() / 2);
+                            pageY = lastLine.offset().top;
+                            console.log("addPart: pageX=" + pageX + " pageY=" + pageY);
+                            break;
+                        case 'part':
+                            // participle - curved word on bent, slanted below word
+                            // TODO
+                            break;
+                        case 'po':
+                            // prepositional object - on horizontal at bottom of preposition diagonal
+                            // TODO
+                            break;
+                        case 'app':
+                            // appositive - in parentheses to the right of word
+                            // TODO
+                            break;
+                        case 'ip':
+                            // infinitive phrases - on pedestal beginning with diagonal
+                            // TODO
+                            break;
+                        case 'ger':
+                            // gerund - on pedestal beginning with staircase
+                            // gerund (object of preposition) - on staircase
+                            // TODO
+                            break;
+                        case 'exp':
+                            // expletive - on horizontal connected to modified word via broken
+                            // TODO
+                            break;
+                        case 'np':
+                            // noun phrase - on pedestal with horizontal (recurse) and broken line from explective to verb
+                            // TODO
+                            break;
+                    }
+                    break;
+            }
+            return createPart(part, pageX, pageY)
+                .appendTo(target);
+        }
+        var margin = 5;
+        function createWord(word, target)
+        {
+            var length = word.width();
+            //var transform = target.style['transform'];
+            var left = margin;
+            var top = 0 - word.height();
+            $('<div />')
+                .addClass('part-text')
+                .text(word.text())
+                .css({
+                    'position': 'relative',
+                    //'transform': transform
+                })
+                .width(length)
+                .offset({left: left, top: top})
+                .appendTo(target);
+            $(target).width(length + 2 * margin);
+            // TODO: recursive resizeChildren($(target).parent())
+        }
+        function getEventTarget(event) {
+            event = event || window.event;
+            return event.target || event.srcElement;
+        }
 
         $(document).ready(function() {
-            //$("#sentence").html(sentence.text().replace(/\b(\w+)\b/g, "<span ondragover=\"dragover_handler(event)\" ondrop=\"drop_handler(event)\">$1</span>"));
-
             var sentence = "This is a test.";
             var words = sentence.split(/[ ,]+/);
             words.forEach(function(word) {
-                var span = $('<span />').appendTo('#sentence');
-                span.attr('class', 'word');
-                //span.attr('ondragover', 'dragover_handler(event)');
-                //span.attr('ondrop', 'drop_handler(event)');
-                span.text(word);
-                var space = $('<span />').appendTo('#sentence');
-                space.attr('class', 'space');
-                space.text(" ");
+                $('<span />').appendTo('#sentence')
+                    .addClass('word-span')
+                    .attr('id', word)
+                    .text(word);
+                $('<span />').appendTo('#sentence')
+                    .addClass('space-span')
+                    .text(" ");
             });
-            $('#sentence span').droppable({
+            $('#sentence .word-span').droppable({
                 drop: function(event, ui) {
-                    console.log("drop: " + event.currentTarget.activeElement.innerText + " -> " + event.target.innerText);
-                    apply_part_to_word(event.currentTarget.activeElement.innerText, event.target);
-                },
-                dragenter: function(event, ui) {
-                    console.log("dragenter: " + event + " " + ui + " " + this);
+                    console.log("TODO");
                 }
-            });
-            $('#sentence .word').click(function() {
-                var activeButton = $('#parts .active')
-                console.log("#sentence .word click: "+ $(this) + " -> " + activeButton.text());
-                if (activeButton.text())
-                {
-                    apply_part_to_word(activeButton.text(), this);
-                }
+            })
+            .draggable({
+                 cancel: '.no-drag',
+                 revert: true,
+                 helper: 'clone',
+                 opacity: 0.3
+            })
+            .click(function(event) {
+                $('#sentence .word-span').removeClass('active');
+                $(this).addClass('active');
             });
 
             var parts = [
@@ -115,43 +381,64 @@
                 ['expletive', 'exp'],
                 ['noun phrase', 'np'] ];
             parts.forEach(function(part) {
-                var element = $('<button />').appendTo('#parts');
-                element.attr('id', part[0]);
-                //element.attr('ondragstart', 'dragstart_handler(event)');
-                //element.attr('draggable', 'true');
-                element.attr('class', 'part-button');
-                //element.attr('onclick');
-                //element.attr('onhover', 'hover(event)');
-                //element.hover(hover);
-                element.text(part[1]);
-                var space = $('<span />').appendTo('#parts');
-                space.text(' ');
-                //console.log("html++ " + element);
+                $('<button />').appendTo('#parts')
+                    .attr('id', 'part-button-'+part[1])
+                    .addClass('part-button')
+                    .text(part[1]);
+                $('<span />').appendTo('#parts')
+                    .text(' ');
             });
-            $('#parts button').click(function() {
-                console.log("#parts button click: button=" + $(this).text());
-                //$(this).effect("highlight", {color: 'grey'});
-                $('#parts button').removeClass("active");
-                $(this).addClass("active");
-            });
-            $('#parts button').draggable({
+            $('#parts button').click(function(event) {
+                $('#parts button').removeClass('active');
+                $(this).addClass('active');
+            })
+            .draggable({
                  cancel: '.no-drag',
                  revert: true,
-                 opacity: 0.3,
-                 //start: function(event, ui) {
-                 //    console.log("start event=" + event + " ui=" + ui);
-                 //    //event.data = event.currentTarget;
-                 //}
+                 helper: 'clone',
+                 opacity: 0.3
             });
 
-            /*$('#sentence span').hover(
-                function() { 
-                    $(this).css('background-color','#ffff66');
-                },
-                function() { 
-                    $(this).css('background-color',''); 
+            $('#diagram').click(function(event) {
+                var activeButton = $('#parts .active');
+                if (activeButton.length)
+                {
+                    console.log("#diagram click : " + this.id + " -> " + activeButton.text());
+                    // TODO: find target based on what's close to the mouse event
+                    addPart(activeButton.text(), event, this);
+                    activeButton.removeClass('active');
                 }
-            );*/
+            })
+            .droppable({
+                drop: function(event, ui) {
+                    var draggable = $(ui.draggable);
+                    if (draggable.hasClass('part-button'))
+                    {    
+                        console.log("#diagram drop : " + this.id + " -> " + draggable.text());
+                        // TODO: find target based on what's close to the mouse event
+                        addPart(draggable.text(), event, this);
+                    }
+                    //activeButton.removeClass('active');
+                }
+            });
+            $('#diagram').on('click', '.part-line', function(event) {               
+                var activeText = $('#sentence .active');
+                if (activeText.length)
+                {
+                    console.log("#diagram on click .part-line : " + this.id + " -> " + activeText.text());
+                    createWord(activeText, this);
+                    activeText.removeClass('active');
+                    return;
+                }
+                var activeButton = $('#parts .active');
+                if (activeButton.length)
+                {
+                    console.log("#diagram on click .part-line : " + this.id + " -> " + activeButton.text());
+                    addPart(activeButton.text(), event, this);
+                    activeText.removeClass('active');
+                    return;
+                }
+            });
         });
     </script>
 }
