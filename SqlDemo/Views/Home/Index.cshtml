@@ -107,11 +107,11 @@
             });
             return closestElement;
         };
-        function createLine(x1,y1, x2,y2) {
+        /*function createLine(x1,y1, x2,y2) {
             var length = Math.sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
             var angle  = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
             var transform = 'rotate('+angle+'deg)';
-            var line = $('<div>')
+            var line = $('<div />')
                 .addClass('diagram-part-line')
                 .css({
                     'position': 'absolute',
@@ -120,6 +120,16 @@
                 .width(length)
                 .offset({left: x1, top: y1});
             return line;
+        }*/
+        function createVectorLine(x, y, angle, length) {
+            return $('<div />')
+                .addClass('diagram-part-line')
+                .css({
+                    'position': 'absolute',
+                    'transform': 'rotate('+angle+'deg)'
+                })
+                .width(length)
+                .offset({left: x, top: y});
         }
         function createPart(part, pageX, pageY) {
             var container = $('<div />')
@@ -128,7 +138,8 @@
             {
                 case 's':
                     // on hortzontal before vertical bisect
-                    createLine(pageX, pageY, pageX + 100, pageY)
+                    //createLine(pageX, pageY, pageX + 100, pageY)
+                    createVectorLine(pageX, pageY, 0, 100)
                         .attr('id', 'diagram-part-s-horizontal')
                         .addClass('diagram-part-horizontal')
                         .addClass('diagram-part-target')
@@ -137,24 +148,28 @@
                 case 'v':
                 case 'vp':
                     // on horizontal after vertical bisect
-                    createLine(pageX, pageY, pageX + 100, pageY)
+                    //createLine(pageX, pageY, pageX + 100, pageY)
+                    createVectorLine(pageX, pageY, 0, 100)
                         .attr('id', 'diagram-part-'+part+'-horizontal')
                         .addClass('diagram-part-horizontal')
                         .addClass('diagram-part-target')
                         .appendTo(container);
-                    createLine(pageX, pageY - 20, pageX, pageY + 5)
+                    //createLine(pageX, pageY - 20, pageX, pageY + 5)
+                    createVectorLine(pageX, pageY - 20, 90, 25)
                         .attr('id', 'diagram-part-'+part+'-vertical')
                         .addClass('diagram-part-vertical')
                         .appendTo(container);
                     break;
                 case 'do':
                     // on horizontal after vertical stop
-                    createLine(pageX, pageY, pageX + 100, pageY)
+                    //createLine(pageX, pageY, pageX + 100, pageY)
+                    createVectorLine(pageX, pageY, 0, 100)
                         .attr('id', 'diagram-part-do-horizontal')
                         .addClass('diagram-part-horizontal')
                         .addClass('diagram-part-target')
                         .appendTo(container);
-                    createLine(pageX, pageY - 20, pageX, pageY)
+                    //createLine(pageX, pageY - 20, pageX, pageY)
+                    createVectorLine(pageX, pageY - 20, 90, 20)
                         .attr('id', 'diagram-part-do-vertical')
                         .addClass('diagram-part-vertical')
                         .appendTo(container);
@@ -178,7 +193,8 @@
                 case 'pos':
                 case 'prep':
                     // on diagonal below word
-                    createLine(pageX, pageY, pageX + 100, pageY + 100)
+                    //createLine(pageX, pageY, pageX + 100, pageY + 100)
+                    createVectorLine(pageX, pageY, 60, 100)
                         .attr('id', 'diagram-part-'+part+'-diagonal')
                         .addClass('diagram-part-diagonal')
                         .addClass('diagram-part-target')
@@ -217,13 +233,13 @@
         }
         function addPart(part, event, target)
         {
-            // TODO: draw the parts as one graphic
             var pageX = event.originalEvent.pageX;
             var pageY = event.originalEvent.pageY;
             switch (part)
             {
                 case 's':
-                    // a subject requires a clause
+                    // a subject requires a new clause
+                    target = $('#diagram');
                     target = $('<div />')
                         .addClass('clause')
                         .attr('id', 'clause')
@@ -238,11 +254,49 @@
                     // a verb, verb phrase, direct object, predicate nominative, or predicate adjective
                     // applies to an existing clause
                     target = target.closest('.clause') || $('.clause');
-                    console.log("addPart: part=" + part + " target=" + target.attr('id'));
                     if (!target.length)
                     {
+                        alert("cannot add "+part+", clause required")
                         return;
                     }
+                    switch (part)
+                    {
+                        case 'v':
+                        case 'vp':
+                            // TODO: conjunctions
+                            // there can only be a single verb or verb phrase
+                            if (target.children('.diagram-element-v, .diagram-element-vp').length)
+                            {
+                                alert("cannot add a second "+part+" to the clause");
+                                return;
+                            }
+                            // a verb or verb phrase requires an existing subject
+                            if (!target.children('.diagram-element-s').length)
+                            {
+                                alert("cannot add a "+part+", subject required");
+                                return;
+                            }
+                            break;
+                        case 'do':
+                        case 'pn':
+                        case 'pa':
+                            // TODO: conjunctions
+                            // there can only be a single direct object, predicate nominative, or predicate adjective
+                            if (target.children('.diagram-element-do, .diagram-element-pn, .diagram-element-pa').length)
+                            {
+                                alert("cannot add a second " + part + " to the clause");
+                                return;
+                            }
+                            // a direct object, predicate nominative, or predicate adjective
+                            // requires an existing verb or verb phrase
+                            if (!target.children('.diagram-element-v, .diagram-element.vp').length)
+                            {
+                                alert("cannot add a "+part+", verb/verb-phrase required");
+                                return;
+                            }
+                            break;
+                    }
+                    console.log("addPart: part=" + part + " target=" + target.attr('id'));
                     var lastLine = target.children('.diagram-part:last-child').children('.diagram-part-horizontal');
                     console.log("addPart: lastLine=" + lastLine[0].id);
                     pageX = lastLine.offset().left + lastLine.width();
@@ -252,6 +306,7 @@
                 case 'conj':
                     // a conjunction applies to two or more existing parts
                     // TODO
+                    alert("cannot add a conjunction, not implemented");
                     return;
                     break;
                 case 'io':
@@ -269,10 +324,11 @@
                 case 'np':
                 default:
                     // an indirect object, participal, adjective, adverb, article, possessive, preposition, propositional object, appositive, infinitive phrase, gerund, explective, or noun phrase
-                    // applies to an existing part
+                    // requires an existing part
                     target = target.closest('.diagram-part');
                     if (!target.length)
                     {
+                        alert("cannot add a "+part+", element required")
                         return;
                     }
                     console.log("addPart: part=" + part + " target=" + target.attr('id'));
@@ -294,42 +350,50 @@
                         case 'part':
                             // participle - curved word on bent, slanted below word
                             // TODO
+                            alert("cannot add a participle, not implemented");
                             break;
                         case 'po':
                             // prepositional object - on horizontal at bottom of preposition diagonal
                             // TODO
+                            alert("cannot add a prepositional object, not implemented");
                             break;
                         case 'app':
                             // appositive - in parentheses to the right of word
                             // TODO
+                            alert("cannot add an appositive, not implemented");
                             break;
                         case 'ip':
                             // infinitive phrases - on pedestal beginning with diagonal
                             // TODO
+                            alert("cannot add an inifinitve phrase, not implemented");
                             break;
                         case 'ger':
                             // gerund - on pedestal beginning with staircase
                             // gerund (object of preposition) - on staircase
                             // TODO
+                            alert("cannot add a gerund, not implemented");
                             break;
                         case 'exp':
                             // expletive - on horizontal connected to modified word via broken
                             // TODO
+                            alert("cannot add an expletive, not implemented");
                             break;
                         case 'np':
                             // noun phrase - on pedestal with horizontal (recurse) and broken line from explective to verb
                             // TODO
+                            alert("cannot add a noun phrase, not implemented");
                             break;
                     }
                     break;
             }
             return createPart(part, pageX, pageY)  
                 .addClass('diagram-element')
+                .addClass('diagram-element-' + part)
                 .attr('id', 'diagram-element-' + ++diagramElementCounter)
                 .appendTo(target);
         }
         var diagramElementCounter = 0;
-        var margin = 10;
+        var margin = 20;
         function addWord(word, target)
         {
             var length = word.width();
