@@ -10,12 +10,6 @@
 </div>
 
 <style>
-    .diagram {
-        height: 1000px;
-        width: 1000px;
-        border: 2px solid black;
-        background-color: grey;
-    }
     .part-button {
         border: 2px solid black;
         background-color: #52A7D3;
@@ -32,12 +26,40 @@
     .sentence-word.active {
         background-color: grey;
     }
+    .diagram {
+        height: 1000px;
+        width: 100%;
+        border: 2px solid black;
+        background-color: grey;
+        overflow: hidden;
+        position: relative;
+    }
+    .diagram-clause {
+        height: 100%;
+        width: 100%;
+        position: relative;
+        border: 0;
+    }
+    .diagram-part {
+        position: relative;
+        float: left;
+        margin: 0;
+        border: 0;
+        /*height: 100%;*/
+        height: 1;
+    }
+    .diagram-part-diagonal {
+        float: bottom;
+    }
     .diagram-part-line {
-        transform-origin: 0 100%;
+        transform-origin: 0 0;
         height: 3px; /* Line width of 3 */
         width: 3px;
         background: #000; /* Black fill */
-        }
+        position: relative;
+        margin: 0;
+        border: 0;
+    }
     .diagram-word {
         /* default */
     }
@@ -107,39 +129,19 @@
             });
             return closestElement;
         };
-        /*function createLine(x1,y1, x2,y2) {
-            var length = Math.sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
-            var angle  = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
-            var transform = 'rotate('+angle+'deg)';
-            var line = $('<div />')
-                .addClass('diagram-part-line')
-                .css({
-                    'position': 'absolute',
-                    'transform': transform
-                })
-                .width(length)
-                .offset({left: x1, top: y1});
-            return line;
-        }*/
-        function createVectorLine(x, y, angle, length) {
-            return $('<div />')
-                .addClass('diagram-part-line')
-                .css({
-                    'position': 'absolute',
-                    'transform': 'rotate('+angle+'deg)'
-                })
-                .width(length)
-                .offset({left: x, top: y});
-        }
-        function createPart(part, pageX, pageY) {
+        function drawPart(part) {
             var container = $('<div />')
                 .addClass('diagram-part')
             switch(part)
             {
                 case 's':
                     // on hortzontal before vertical bisect
-                    //createLine(pageX, pageY, pageX + 100, pageY)
-                    createVectorLine(pageX, pageY, 0, 100)
+                    container.width(100);
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .css({
+                            'width': '100%'
+                        })
                         .attr('id', 'diagram-part-s-horizontal')
                         .addClass('diagram-part-horizontal')
                         .addClass('diagram-part-target')
@@ -148,28 +150,46 @@
                 case 'v':
                 case 'vp':
                     // on horizontal after vertical bisect
-                    //createLine(pageX, pageY, pageX + 100, pageY)
-                    createVectorLine(pageX, pageY, 0, 100)
+                    container.width(100);
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .css({
+                            'width': '100%'
+                        })
                         .attr('id', 'diagram-part-'+part+'-horizontal')
                         .addClass('diagram-part-horizontal')
                         .addClass('diagram-part-target')
                         .appendTo(container);
-                    //createLine(pageX, pageY - 20, pageX, pageY + 5)
-                    createVectorLine(pageX, pageY - 20, 90, 25)
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .css({
+                            'transform': 'rotate(90deg)',
+                            'width': '25'
+                        })
+                        .offset({left: 0, top: -20})
                         .attr('id', 'diagram-part-'+part+'-vertical')
                         .addClass('diagram-part-vertical')
                         .appendTo(container);
                     break;
                 case 'do':
                     // on horizontal after vertical stop
-                    //createLine(pageX, pageY, pageX + 100, pageY)
-                    createVectorLine(pageX, pageY, 0, 100)
+                    container.width(100);
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .css({
+                            'width': '100%'
+                        })
                         .attr('id', 'diagram-part-do-horizontal')
                         .addClass('diagram-part-horizontal')
                         .addClass('diagram-part-target')
                         .appendTo(container);
-                    //createLine(pageX, pageY - 20, pageX, pageY)
-                    createVectorLine(pageX, pageY - 20, 90, 20)
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .css({
+                            'transform': 'rotate(90deg)',
+                            'width': '20'
+                        })
+                        .offset({left: 0, top: -20})
                         .attr('id', 'diagram-part-do-vertical')
                         .addClass('diagram-part-vertical')
                         .appendTo(container);
@@ -193,8 +213,13 @@
                 case 'pos':
                 case 'prep':
                     // on diagonal below word
-                    //createLine(pageX, pageY, pageX + 100, pageY + 100)
-                    createVectorLine(pageX, pageY, 60, 100)
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .css({
+                            'transform': 'rotate(60deg)',
+                            'width': '100'
+                        })
+                        .offset({left: 20, top: 0})
                         .attr('id', 'diagram-part-'+part+'-diagonal')
                         .addClass('diagram-part-diagonal')
                         .addClass('diagram-part-target')
@@ -233,16 +258,18 @@
         }
         function addPart(part, event, target)
         {
-            var pageX = event.originalEvent.pageX;
-            var pageY = event.originalEvent.pageY;
             switch (part)
             {
                 case 's':
                     // a subject requires a new clause
                     target = $('#diagram');
                     target = $('<div />')
-                        .addClass('clause')
-                        .attr('id', 'clause')
+                        .addClass('diagram-clause')
+                        .attr('id', 'diagram-clause')
+                        .offset({
+                            left: event.originalEvent.offsetX,
+                            top: event.originalEvent.offsetY
+                        })
                         .appendTo(target);
                     console.log("addPart: part=s target=" + target.attr('id'));
                     break;
@@ -253,7 +280,11 @@
                 case 'pa':
                     // a verb, verb phrase, direct object, predicate nominative, or predicate adjective
                     // applies to an existing clause
-                    target = target.closest('.clause') || $('.clause');
+                    target = target.closest('.diagram-clause');
+                    if (!target.length)
+                    {
+                        target = $('.diagram-clause');
+                    }
                     if (!target.length)
                     {
                         alert("cannot add "+part+", clause required")
@@ -297,11 +328,6 @@
                             break;
                     }
                     console.log("addPart: part=" + part + " target=" + target.attr('id'));
-                    var lastLine = target.children('.diagram-part:last-child').children('.diagram-part-horizontal');
-                    console.log("addPart: lastLine=" + lastLine[0].id);
-                    pageX = lastLine.offset().left + lastLine.width();
-                    pageY = lastLine.offset().top;
-                    console.log("addPart: pageX=" + pageX + " pageY=" + pageY);
                     break;
                 case 'conj':
                     // a conjunction applies to two or more existing parts
@@ -343,9 +369,6 @@
                             // on diagonal below word
                             var lastLine = target.children('.diagram-part-horizontal');
                             console.log("addPart: lastLine=" + lastLine[0].id);
-                            pageX = lastLine.offset().left + (lastLine.width() / 2);
-                            pageY = lastLine.offset().top;
-                            console.log("addPart: pageX=" + pageX + " pageY=" + pageY);
                             break;
                         case 'part':
                             // participle - curved word on bent, slanted below word
@@ -386,7 +409,7 @@
                     }
                     break;
             }
-            return createPart(part, pageX, pageY)  
+            return drawPart(part)  
                 .addClass('diagram-element')
                 .addClass('diagram-element-' + part)
                 .attr('id', 'diagram-element-' + ++diagramElementCounter)
@@ -410,8 +433,9 @@
                 .width(length)
                 .offset({left: left, top: top})
                 .appendTo(target);
-            // TODO: target.width(length + 2 * margin);
+            //target.width(length + 2 * margin);
             // TODO: recursive resizeChildren(target.parent())
+            target.parent().width(length + 2 * margin);
         }
         function getEventTarget(event) {
             event = event || window.event;
@@ -525,43 +549,6 @@
                     console.log("#diagram click : part=" + targetPart.attr('id'));
                 }
             })
-            .keydown(function(event) {
-                event.preventDefault();
-                console.log("#diagram keydown : keyCode="+event.keyCode+", which="+event.which+", ctrlKey="+event.ctrlKey);
-            })
-            .keyup(function(event) {
-                event.preventDefault();
-                console.log("#diagram keyup : keyCode="+event.keyCode+", which="+event.which+", ctrlKey="+event.ctrlKey);
-                switch (event.keyCode)
-                {
-                    case 46:
-                        console.log("#diagram keyup: delete");
-                        var selectedWord = $("#diagram .diagram-word.active");
-                        if (selectedWord.length)
-                        {
-                            console.log("#diagram keyup: remove " + selectedWord.text());
-                            selectedWord.remove();
-                        }
-                        break;
-                    //case 17:
-                    //    console.log("#diagram keyup: ctrl");
-                    //    break;
-                    case 90:
-                        console.log("#diagram keyup: z");
-                        if (event.ctrlKey)
-                        {
-                            console.log("#digram keyup: ctrl-z");
-                            lastElement = $('#diagram-element-' + diagramElementCounter);
-                            if (lastElement.length)
-                            {
-                                console.log("#diiagram keyup: remove " + lastElement.attr('id'));
-                                lastElement.remove();
-                                --diagramElementCounter;
-                            }
-                        }
-                        break;
-                }
-            })
             .droppable({
                 drop: function(event, ui) {
                     $(this).focus();
@@ -593,6 +580,43 @@
                         }
                         return;
                     }
+                }
+            })
+            /*.keydown(function(event) {
+                event.preventDefault();
+                console.log("#diagram keydown : keyCode="+event.keyCode+", which="+event.which+", ctrlKey="+event.ctrlKey);
+            })*/
+            .keyup(function(event) {
+                event.preventDefault();
+                console.log("#diagram keyup : keyCode="+event.keyCode+", which="+event.which+", ctrlKey="+event.ctrlKey);
+                switch (event.keyCode)
+                {
+                    case 46:
+                        console.log("#diagram keyup: delete");
+                        var selectedWord = $("#diagram .diagram-word.active");
+                        if (selectedWord.length)
+                        {
+                            console.log("#diagram keyup: remove " + selectedWord.text());
+                            selectedWord.remove();
+                        }
+                        break;
+                    //case 17:
+                    //    console.log("#diagram keyup: ctrl");
+                    //    break;
+                    case 90:
+                        console.log("#diagram keyup: z");
+                        if (event.ctrlKey)
+                        {
+                            console.log("#digram keyup: ctrl-z");
+                            lastElement = $('#diagram-element-' + diagramElementCounter);
+                            if (lastElement.length)
+                            {
+                                console.log("#diiagram keyup: remove " + lastElement.attr('id'));
+                                lastElement.remove();
+                                --diagramElementCounter;
+                            }
+                        }
+                        break;
                 }
             });
         });
