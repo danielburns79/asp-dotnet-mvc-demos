@@ -79,37 +79,54 @@
 @section scripts
 {
     <script>
+        function matrixRotate(p, matrix, anchor)
+        {
+            // [cos(a), sin(a), -sin(a), cos(a), 0, 0]
+            var values = matrix.match(/[\-\d\.]+/g);
+            var r = {
+                x: (values[0] * (p.x - anchor.x)) + (values[2] * (p.y - anchor.y)) + anchor.x,
+                y: (values[1] * (p.x - anchor.x)) + (values[3] * (p.y - anchor.y)) + anchor.y
+                };
+            return r;
+        }
         jQuery.fn.closestToOffset = function(offset) {
             var closestElement = null,
                 elementOffset,
                 x = offset.left,
                 y = offset.top,
-                distance,
-                distanceX,
-                distanceY,
-                minDistance,
-                centerX, centerY;
+                p1, p2, p3, p4,
+                centerX, centerY,
+                distanceX, distanceY,
+                distance, minDistance;
             console.log("closestToOffset: x=" + x + ", y=" + y);
             this.each(function() {
                 var currentElement = $(this);
                 elementOffset = currentElement.offset();
-                right = elementOffset.left + currentElement.width();
-                bottom = elementOffset.top + currentElement.height();
-                console.log("closestToOffset: currentElement=" + currentElement.attr('id') + ", l="+elementOffset.left + ", r="+right+", t="+elementOffset.top+", b="+bottom);
-                var bcr = currentElement[0].getBoundingClientRect();
-                console.log ("closestToOffset: bounding client bcrl="+bcr.left+", bcrr="+bcr.right+", bcrt="+bcr.top+", bcrb="+bcr.bottom);
-
-                if (x >= elementOffset.left &&
-                    x <= right &&
-                    y >= elementOffset.top &&
-                    y <= bottom
-                ) {
-                    closestElement = currentElement;
-                    console.log("closestToOffset: offset is within element " + currentElement.attr('id'));
-                    return false;
+                p1 = { x: elementOffset.left, y: elementOffset.top };
+                p2 = { x: elementOffset.left + currentElement.width(), y: p1.y };
+                p3 = { x: p1.x, y: elementOffset.top + currentElement.height() };
+                p4 = { x: p2.x, y: p3.y };
+                var matrix = currentElement.css('transform');
+                if (matrix.indexOf('matrix') >= 0)
+                {
+                    p2 = matrixRotate(p2, matrix, p1);
+                    p4 = matrixRotate(p4, matrix, p3);
                 }
-                var centerX = (elementOffset.left + right + elementOffset.left + right) / 4;
-                var centerY = (elementOffset.top + elementOffset.top + bottom + bottom) / 4;
+                else
+                {
+                    if (x >= p1.x &&
+                        x <= p2.x &&
+                        y >= p1.y &&
+                        y <= p2.y)
+                    {
+                        closestElement = currentElement;
+                        console.log("closestToOffset: offset is within element " + currentElement.attr('id'));
+                        return false;
+                    }
+                }
+                console.log("closestToOffset: currentElement="+currentElement.attr('id')+", x1="+p1.x+", y1="+p1.y+", x2="+p2.x+", y2="+p2.y+", x3="+p3.x+", y3="+p3.y+", x4="+p4.x+", y4="+p4.y);
+                var centerX = (p1.x + p2.x + p3.x + p4.x) / 4;
+                var centerY = (p1.y + p2.y + p3.y + p4.y) / 4;
                 var distanceX = centerX - x;
                 var distanceY = centerY - y;
                 var distance = Math.sqrt((distanceX * distanceX) + (distanceY * distanceY));
