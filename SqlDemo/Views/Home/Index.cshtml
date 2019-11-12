@@ -46,7 +46,7 @@
         height: 0;
     }
     .diagram-part-diagonal {
-        /*float: bottom;*/
+        /* default */
     }
     .diagram-part-line {
         /* div */
@@ -79,6 +79,17 @@
 @section scripts
 {
     <script>
+        function angleRotate(p, angle, anchor)
+        {
+            var values = angle.match(/[\d]+/g);
+            var _sin = Math.sin(values[0] * Math.PI / 180);
+            var _cos = Math.cos(values[0] * Math.PI / 180);
+            var r = {
+                x: (_cos * (p.x - anchor.x)) + (-_sin * (p.y - anchor.y)) + anchor.x,
+                y: (_sin * (p.x - anchor.x)) + (_cos * (p.y - anchor.y)) + anchor.y
+            };
+            return r;
+        }
         function matrixRotate(p, matrix, anchor)
         {
             // [cos(a), sin(a), -sin(a), cos(a), 0, 0]
@@ -88,6 +99,26 @@
                 y: (values[1] * (p.x - anchor.x)) + (values[3] * (p.y - anchor.y)) + anchor.y
                 };
             return r;
+        }
+        function transformRotate(p, transform, anchor)
+        {
+            if (transform.search('matrix') >= 0)
+            {
+                return matrixRotate(p, transform, anchor);
+            }
+            else if (transform.search('rotate') >= 0)
+            {
+                return angleRotate(p, transform, anchor);
+            }
+            else
+            {
+                alert("not a valid transform rotate " + transform);
+            }
+        }
+        jQuery.fn.updateCounter = function(counter)
+        {
+            diagramElementCounter = counter;
+            return this;
         }
         jQuery.fn.closestToOffset = function(offset) {
             var closestElement = null,
@@ -106,11 +137,11 @@
                 p2 = { x: elementOffset.left + currentElement.width(), y: p1.y };
                 p3 = { x: p1.x, y: elementOffset.top + currentElement.height() };
                 p4 = { x: p2.x, y: p3.y };
-                var matrix = currentElement.css('transform');
-                if (matrix.indexOf('matrix') >= 0)
+                var transform = currentElement.css('transform');
+                if (transform && transform.search('none') < 0)
                 {
-                    p2 = matrixRotate(p2, matrix, p1);
-                    p4 = matrixRotate(p4, matrix, p3);
+                    p2 = transformRotate(p2, transform, p1);
+                    p4 = transformRotate(p4, transform, p3);
                 }
                 else
                 {
@@ -147,12 +178,10 @@
             {
                 case 's':
                     // on hortzontal before vertical bisect
-                    container.width(100);
+                    container.css({'min-width': 50});
                     $('<div />')
                         .addClass('diagram-part-line')
-                        .css({
-                            'width': '100%',
-                        })
+                        .width('100%')
                         .attr('id', 'diagram-part-s-horizontal')
                         .addClass('diagram-part-horizontal')
                         .addClass('diagram-part-target')
@@ -161,22 +190,18 @@
                 case 'v':
                 case 'vp':
                     // on horizontal after vertical bisect
-                    container.width(100);
+                    container.css({'min-width': 50});
                     $('<div />')
                         .addClass('diagram-part-line')
-                        .css({
-                            'width': '100%'
-                        })
+                        .width('100%')
                         .attr('id', 'diagram-part-'+part+'-horizontal')
                         .addClass('diagram-part-horizontal')
                         .addClass('diagram-part-target')
                         .appendTo(container);
                     $('<div />')
                         .addClass('diagram-part-line')
-                        .css({
-                            'transform': 'rotate(90deg)',
-                            'width': 25 + 3
-                        })
+                        .css({'transform': 'rotate(90deg)'})
+                        .width(25 + 3)
                         .offset({left: 0, top: -20})
                         .attr('id', 'diagram-part-'+part+'-vertical')
                         .addClass('diagram-part-vertical')
@@ -184,30 +209,22 @@
                     break;
                 case 'do':
                     // on horizontal after vertical stop
-                    container.width(100);
+                    container.css({'min-width': 50});
                     $('<div />')
                         .addClass('diagram-part-line')
-                        .css({
-                            'width': '100%'
-                        })
+                        .width('100%')
                         .attr('id', 'diagram-part-do-horizontal')
                         .addClass('diagram-part-horizontal')
                         .addClass('diagram-part-target')
                         .appendTo(container);
                     $('<div />')
                         .addClass('diagram-part-line')
-                        .css({
-                            'transform': 'rotate(90deg)',
-                            'width': 20 + 3
-                        })
+                        .css({'transform': 'rotate(90deg)'})
+                        .width(20 + 3)
                         .offset({left: 0, top: -20})
                         .attr('id', 'diagram-part-do-vertical')
                         .addClass('diagram-part-vertical')
                         .appendTo(container);
-                    break;
-                case 'io':
-                    // on diagonal below word
-                    // TODO
                     break;
                 case 'pn':
                 case 'pa':
@@ -222,52 +239,78 @@
                 case 'adv':
                 case 'art':
                 case 'pos':
-                case 'prep':
                     // on diagonal below word
+                    container.css({'min-width': 50});
                     $('<div />')
                         .addClass('diagram-part-line')
-                        .css({
-                            'transform': 'rotate(60deg)',
-                            'width': '100'
-                        })
-                        .offset({left: 20, top: 0})
+                        .css({'transform': 'rotate(60deg)'})
+                        .width('100%')
                         .attr('id', 'diagram-part-'+part+'-diagonal')
                         .addClass('diagram-part-diagonal')
                         .addClass('diagram-part-target')
                         .appendTo(container);
                     break;
-                case 'po':
-                    // on horizontal at bottom of preposition diagonal
+                case 'io':
+                case 'prep':
+                    // indirect object on horizontal at bottom of diagonal below word
+                    // preposition on diagonal below word, object on horizontal at bottom of diagonal
                     // TODO
+                    container.css({'min-width': 50});
+                    var diagonal = $('<div />')
+                        .addClass('diagram-part-line')
+                        .css({'transform': 'rotate(60deg)'})
+                        .width('100%')
+                        .attr('id', 'diagram-part-'+part+'-diagonal')
+                        .addClass('diagram-part-diagonal')
+                        .addClass('diagram-part-target')
+                        .appendTo(container);
+                    var diagonalOffset = diagonal.offset();
+                    //console.log("drawPart: dl="+diagonalOffset.left+", dt="+diagonalOffset.top+", dw="+diagonal.width());
+                    var matrix = diagonal.css('transform');
+                    //console.log("drawPath: matrix="+matrix);
+                    var diagonalBottom = transformRotate({x:diagonalOffset.left + /*TODO: get width*/50/*diagonal.width()*/, y:diagonalOffset.top + diagonal.height()}, matrix, {x: diagonalOffset.left, y:diagonalOffset.top});
+                    //console.log("drawpath: dbx="+diagonalBottom.x+", dby="+diagonalBottom.y);
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .offset({left: diagonalBottom.x - 1, top: diagonalBottom.y - 1})
+                        .width('100%')
+                        .attr('id', 'diagram-part-'+part+'-horizontal')
+                        .addClass('diagram-part-horizontal')
+                        .addClass('diagram-part-target')
+                        .appendTo(container);
+                    //alert("cannot draw a "+part+", not implemented");
                     break;
+                /*case 'po':*/
+                    // propositional object draw by proposition
                 case 'conj':
                     // on broken line between words
                     // TODO
-                    break;
+                    //break;
                 case 'app':
                     // in parentheses to the right of word
                     // TODO
-                    break;
+                    //break;
                 case 'ip':
                     // on pedestal beginning with diagonal
                     // TODO
-                    break;
+                    //break;
                 case 'ger':
                     // on pedestal beginning with staircase OR on staircase (object of preposition)
                     // TODO
-                    break;
+                    //break;
                 case 'exp':
                     // on horizontal connected to modified word via broken
                     // TODO
-                    break;
+                    //break;
                 case 'np':
                     // on pedestal with horizontal (recurse) and broken line from explective to verb
                     // TODO
+                    alert("cannot draw a "+part+", not implemented");
                     break;
             }
             return container;
         }
-        function addModifiers(part, container)
+        jQuery.fn.addModifiers = function(part, counter)
         {
             switch (part)
             {
@@ -277,37 +320,37 @@
                 case 'do':
                 case 'pn':
                 case 'pa':
-                    console.log("addModifiers: part="+part+", container="+container.attr('id'));
-                    var clauseBasic = container.closest('.diagram-clause-basic');
+                    console.log("addModifiers: part="+part+", this="+this.attr('id'));
+                    var clauseBasic = this.closest('.diagram-clause-basic');
                     if (!clauseBasic.length)
                     {
                         alert("something is very wrong... can't find diagram-clause-basic");
-                        return container;
+                        return this;
                     }
-                    var clause = container.closest('.diagram-clause');
+                    var clause = clauseBasic.closest('.diagram-clause');
                     if (!clause.length)
                     {
                         alert("something is very wrong... can't find diagram-clause");
-                        return container;
+                        return this;
                     }
                     var clauseBody = clause.children('.diagram-clause-body');
                     if (!clauseBody.length)
                     {
                         alert("something is very wrong... can't find diagram-clause-body");
-                        return container;
+                        return this;
                     }
                     var clauseModifiers = clauseBody.children('.diagram-clause-modifiers');
                     if (!clauseModifiers.length)
                     {
                         alert("something is very wrong... can't find diagram-clause-modifiers");
-                        return container;
+                        return this;
                     }
                     var modifiers = $("<td />")
                         .addClass('diagram-part')
                         .addClass('diagram-element')
                         .addClass('diagram-element-'+part+'-modifiers')
-                        .attr('id', 'diagram-element-' + diagramElementCounter)
-                        .addClass('diagram-element-' + diagramElementCounter)
+                        .attr('id', 'diagram-element-' + counter)
+                        .addClass('diagram-element-' + counter)
                         .appendTo(clauseModifiers);
                     console.log("addModifiers: part="+part+", clauseModifiers="+clauseModifiers.attr('id')+", modifiers="+modifiers.attr('id'));
                     break;
@@ -329,10 +372,11 @@
                     // TODO
                     break;
             }
-            return container;
+            return this;
         }
         function addPart(part, event, container)
         {
+            var counter = diagramElementCounter + 1;
             switch (part)
             {
                 case 's':
@@ -341,21 +385,17 @@
                     container = $('<table />')
                         .addClass('diagram-clause')
                         .attr('id', 'diagram-clause')
-                        .offset({
-                            left: event.originalEvent.offsetX,
-                            top: event.originalEvent.offsetY
-                        })
+                        .offset({left: event.originalEvent.offsetX, top: event.originalEvent.offsetY})
                         .appendTo(container);
                     container = $('<tbody />')
                         .addClass('diagram-clause-body')
                         .appendTo(container);
-                    var clause_basic = $('<tr />')
+                    container = $('<tr />')
                         .addClass('diagram-clause-basic')
                         .appendTo(container);
                     $('<tr />')
                         .addClass('diagram-clause-modifiers')
-                        .appendTo(container);
-                    container = clause_basic;
+                        .appendTo(container.parent());
                     console.log("addPart: part=s container=" + container.attr('id'));
                     break;
                 case 'v':
@@ -414,27 +454,32 @@
                     }
                     console.log("addPart: part=" + part + " container=" + container.attr('id'));
                     break;
+                case 'io':
+                    // an indirect object requries a verb or verb phrase
+                    // TODO
+                    alert("cannot add an indirect object, not implemente");
+                    break;
                 case 'conj':
                     // a conjunction applies to two or more existing parts
                     // TODO
                     alert("cannot add a conjunction, not implemented");
                     return;
                     break;
-                case 'io':
+                /*case 'po':*/
+                    // a propositional object is always created by adding the proposition
                 case 'part':
                 case 'adj':
                 case 'adv':
                 case 'art':
                 case 'pos':
                 case 'prep':
-                case 'po':
                 case 'app':
                 case 'ip':
                 case 'ger':
                 case 'exp':
                 case 'np':
                 default:
-                    // an indirect object, participal, adjective, adverb, article, possessive, preposition, propositional object, appositive, infinitive phrase, gerund, explective, or noun phrase
+                    // an indirect object, participal, adjective, adverb, article, possessive, preposition, appositive, infinitive phrase, gerund, explective, or noun phrase
                     // requires an existing part
                     container = container.closest('.diagram-part');
                     if (!container.length)
@@ -509,16 +554,19 @@
                         case 'pos':
                         case 'prep':
                             // on diagonal below word
+                            $('<td />')
+                                .css({'min-width': 20})
+                                .addClass('diagram-space')
+                                .attr('id', 'diagram-element-' + counter)
+                                .addClass('diagram-element-' + counter)
+                                .appendTo(container);
                             break;
+                        /*case 'po':*/
+                            // prepositional object drawn by preposition
                         case 'part':
                             // participle - curved word on bent, slanted below word
                             // TODO
                             alert("cannot add a participle, not implemented");
-                            break;
-                        case 'po':
-                            // prepositional object - on horizontal at bottom of preposition diagonal
-                            // TODO
-                            alert("cannot add a prepositional object, not implemented");
                             break;
                         case 'app':
                             // appositive - in parentheses to the right of word
@@ -549,32 +597,34 @@
                     }
                     break;
             }
-            return addModifiers(part, drawPart(part)
+            return drawPart(part)
                 .addClass('diagram-element')
                 .addClass('diagram-element-' + part)
-                .attr('id', 'diagram-element-' + ++diagramElementCounter)
-                .addClass('diagram-element-' + diagramElementCounter)
-                .appendTo(container));
+                .attr('id', 'diagram-element-' + counter)
+                .addClass('diagram-element-' + counter)
+                .appendTo(container)
+                .addModifiers(part, counter)
+                .updateCounter(counter);
         }
         var diagramElementCounter = 0;
         var margin = 20;
         function addWord(word, target)
         {
+            var counter = diagramElementCounter + 1;
             var length = word.width();
             var left = margin;
             var top = 0 - word.height();
             $('<div />')
                 .addClass('diagram-word')
                 .addClass('diagram-element')
-                .attr('id', 'diagram-element-' + ++diagramElementCounter)
-                .addClass('diagram-element-' + diagramElementCounter)
+                .attr('id', 'diagram-element-' + counter)
+                .addClass('diagram-element-' + counter)
                 .text(word.text())
-                .css({
-                    'position': 'relative',
-                })
-                .width(length)
+                .css({'position': 'relative'})
+                //.width(length)
                 .offset({left: left, top: top})
-                .appendTo(target);
+                .appendTo(target)
+                .updateCounter(counter);
             //target.width(length + 2 * margin);
             // TODO: recursive resizeChildren(target.parent())
             target.parent().width(length + 2 * margin);
@@ -622,7 +672,7 @@
                 ['article', 'art'],
                 ['possessive', 'pos'],
                 ['preposition', 'prep'],
-                ['prepositional-object', 'po'],
+                //['prepositional-object', 'po'],
                 ['conjunction', 'conj'],
                 ['appositive', 'app'],
                 ['infinitive phrase', 'ip'],
