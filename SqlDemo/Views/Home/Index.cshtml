@@ -35,14 +35,17 @@
         overflow: hidden;
         position: relative;
     }
+    /*.diagram-clause-table*/ 
     .diagram-clause {
         /* table */
         height: 0;
         position: relative;
+        /*position: absolute;*/
     }
     .diagram-part {
         /* td */
         position: relative;
+        /*position: absolute;*/
         height: 0;
     }
     .diagram-part-diagonal {
@@ -171,33 +174,34 @@
             });
             return closestElement;
         };
-        function drawPart(part) {
-            var container = $('<td />')
-                .addClass('diagram-part')
+        jQuery.fn.drawPart = function(part)
+        {
             switch(part)
             {
                 case 's':
                     // on hortzontal before vertical bisect
-                    container.css({'min-width': 50});
+                    //this.css({'min-width': 50});
                     $('<div />')
                         .addClass('diagram-part-line')
                         .width('100%')
                         .attr('id', 'diagram-part-s-horizontal')
                         .addClass('diagram-part-horizontal')
                         .addClass('diagram-part-target')
-                        .appendTo(container);
+                        .addClass('diagram-part-word-target')
+                        .appendTo(this);
                     break;
                 case 'v':
                 case 'vp':
                     // on horizontal after vertical bisect
-                    container.css({'min-width': 50});
+                    //this.css({'min-width': 50});
                     $('<div />')
                         .addClass('diagram-part-line')
                         .width('100%')
                         .attr('id', 'diagram-part-'+part+'-horizontal')
                         .addClass('diagram-part-horizontal')
                         .addClass('diagram-part-target')
-                        .appendTo(container);
+                        .addClass('diagram-part-word-target')
+                        .appendTo(this);
                     $('<div />')
                         .addClass('diagram-part-line')
                         .css({'transform': 'rotate(90deg)'})
@@ -205,18 +209,19 @@
                         .offset({left: 0, top: -20})
                         .attr('id', 'diagram-part-'+part+'-vertical')
                         .addClass('diagram-part-vertical')
-                        .appendTo(container);
+                        .appendTo(this);
                     break;
                 case 'do':
                     // on horizontal after vertical stop
-                    container.css({'min-width': 50});
+                    //this.css({'min-width': 50});
                     $('<div />')
                         .addClass('diagram-part-line')
                         .width('100%')
                         .attr('id', 'diagram-part-do-horizontal')
                         .addClass('diagram-part-horizontal')
                         .addClass('diagram-part-target')
-                        .appendTo(container);
+                        .addClass('diagram-part-word-target')
+                        .appendTo(this);
                     $('<div />')
                         .addClass('diagram-part-line')
                         .css({'transform': 'rotate(90deg)'})
@@ -224,7 +229,7 @@
                         .offset({left: 0, top: -20})
                         .attr('id', 'diagram-part-do-vertical')
                         .addClass('diagram-part-vertical')
-                        .appendTo(container);
+                        .appendTo(this);
                     break;
                 case 'pn':
                 case 'pa':
@@ -240,7 +245,7 @@
                 case 'art':
                 case 'pos':
                     // on diagonal below word
-                    container.css({'min-width': 50});
+                    //this.css({'min-width': 50});
                     $('<div />')
                         .addClass('diagram-part-line')
                         .css({'transform': 'rotate(60deg)'})
@@ -248,14 +253,14 @@
                         .attr('id', 'diagram-part-'+part+'-diagonal')
                         .addClass('diagram-part-diagonal')
                         .addClass('diagram-part-target')
-                        .appendTo(container);
+                        .addClass('diagram-part-word-target')
+                        .appendTo(this);
                     break;
                 case 'io':
                 case 'prep':
                     // indirect object on horizontal at bottom of diagonal below word
                     // preposition on diagonal below word, object on horizontal at bottom of diagonal
-                    // TODO
-                    container.css({'min-width': 50});
+                    //this.css({'min-width': 50});
                     var diagonal = $('<div />')
                         .addClass('diagram-part-line')
                         .css({'transform': 'rotate(60deg)'})
@@ -263,13 +268,11 @@
                         .attr('id', 'diagram-part-'+part+'-diagonal')
                         .addClass('diagram-part-diagonal')
                         .addClass('diagram-part-target')
-                        .appendTo(container);
+                        .addClass('diagram-part-word-target')
+                        .appendTo(this);
                     var diagonalOffset = diagonal.offset();
-                    //console.log("drawPart: dl="+diagonalOffset.left+", dt="+diagonalOffset.top+", dw="+diagonal.width());
                     var matrix = diagonal.css('transform');
-                    //console.log("drawPath: matrix="+matrix);
-                    var diagonalBottom = transformRotate({x:diagonalOffset.left + /*TODO: get width*/50/*diagonal.width()*/, y:diagonalOffset.top + diagonal.height()}, matrix, {x: diagonalOffset.left, y:diagonalOffset.top});
-                    //console.log("drawpath: dbx="+diagonalBottom.x+", dby="+diagonalBottom.y);
+                    var diagonalBottom = transformRotate({x:diagonalOffset.left + 50, y:diagonalOffset.top + diagonal.height()}, matrix, {x: diagonalOffset.left, y:diagonalOffset.top});
                     $('<div />')
                         .addClass('diagram-part-line')
                         .offset({left: diagonalBottom.x - 1, top: diagonalBottom.y - 1})
@@ -277,8 +280,8 @@
                         .attr('id', 'diagram-part-'+part+'-horizontal')
                         .addClass('diagram-part-horizontal')
                         .addClass('diagram-part-target')
-                        .appendTo(container);
-                    //alert("cannot draw a "+part+", not implemented");
+                        .addClass('diagram-part-word-target')
+                        .appendTo(this);
                     break;
                 /*case 'po':*/
                     // propositional object draw by proposition
@@ -308,9 +311,9 @@
                     alert("cannot draw a "+part+", not implemented");
                     break;
             }
-            return container;
+            return this;
         }
-        jQuery.fn.addModifiers = function(part, counter)
+        /*jQuery.fn.addModifiers = function(part, counter)
         {
             switch (part)
             {
@@ -321,31 +324,19 @@
                 case 'pn':
                 case 'pa':
                     console.log("addModifiers: part="+part+", this="+this.attr('id'));
-                    var clauseBasic = this.closest('.diagram-clause-basic');
-                    if (!clauseBasic.length)
-                    {
-                        alert("something is very wrong... can't find diagram-clause-basic");
-                        return this;
-                    }
-                    var clause = clauseBasic.closest('.diagram-clause');
-                    if (!clause.length)
-                    {
-                        alert("something is very wrong... can't find diagram-clause");
-                        return this;
-                    }
-                    var clauseBody = clause.children('.diagram-clause-body');
+                    var clauseBody = this.closest('.diagram-clause-table-body');
                     if (!clauseBody.length)
                     {
-                        alert("something is very wrong... can't find diagram-clause-body");
+                        alert("something is very wrong... can't find diagram-clause-table-body");
                         return this;
                     }
-                    var clauseModifiers = clauseBody.children('.diagram-clause-modifiers');
+                    var clauseModifiers = clauseBody.children('.diagram-clause-table-row-modifiers');
                     if (!clauseModifiers.length)
                     {
-                        alert("something is very wrong... can't find diagram-clause-modifiers");
+                        alert("something is very wrong... can't find diagram-clause-table-row-modifiers");
                         return this;
                     }
-                    var modifiers = $("<td />")
+                    var modifiers = $('<td />')
                         .addClass('diagram-part')
                         .addClass('diagram-element')
                         .addClass('diagram-element-'+part+'-modifiers')
@@ -354,6 +345,9 @@
                         .appendTo(clauseModifiers);
                     console.log("addModifiers: part="+part+", clauseModifiers="+clauseModifiers.attr('id')+", modifiers="+modifiers.attr('id'));
                     break;
+                case 'prep':
+                    // TODO - modifiers below horizontal line
+                    break;
                 case 'conj':
                 case 'io':
                 case 'part':
@@ -361,7 +355,6 @@
                 case 'adv':
                 case 'art':
                 case 'pos':
-                case 'prep':
                 case 'po':
                 case 'app':
                 case 'ip':
@@ -373,6 +366,95 @@
                     break;
             }
             return this;
+        }*/
+        jQuery.fn.setOffset = function()
+        {
+            console.log("setOffset: this = " + this.attr('id') + " " + this.attr('class'));
+            if (this.hasClass('diagram-word'))
+            {
+                return this;
+            }
+            if (this.hasClass('diagram-element-s'))
+            {
+                console.log("setOffset: this = " + this.attr('id') + " nothing to do for subject");
+                return this;
+            }
+            else if (this.hasClass('diagram-element-v') ||
+                this.hasClass('diagram-element-vp'))
+            {
+                var subject = this.closest('.diagram-clause').children('.diagram-element-s');
+                console.log("setOffset: this = " + this.attr('id') + " subject.width = " + subject.width());
+                this.css({'left': subject.width()});
+            }
+            else if (this.hasClass('diagram-element-do'))
+            {
+                var subject = this.closest('.diagram-clause').children('.diagram-element-s');
+                var verb = this.closest('.diagram-clause').children('.diagram-element-v');
+                //var verbPhrase = this.closest('.diagram-clause').children('.diagram-element-vp'); // TODO
+                this.css({'left': subject.width() + verb.width() /*+ verbPhrase.width()*/});
+            }
+            // TODO - adj, adv, art, pos
+            // TODO - io, prep
+            // TODO - the rest
+            
+            console.log("setOffset: this = " + this.attr('id') + " left = " + this.offset().left);
+            return this;
+        }
+        jQuery.fn.setWidth = function()
+        {
+            console.log("setWidth: this = " + this.attr('id') + " " + this.attr('class'));
+            if (this.hasClass('diagram-word'))
+            {
+                return this;
+            }
+            else if (this.hasClass('diagram-element-s') ||
+                this.hasClass('diagram-element-v') ||
+                this.hasClass('diagram-element-vp') ||
+                this.hasClass('diagram-element-do') ||
+                this.hasClass('diagram-element-adj') ||
+                this.hasClass('diagram-element-adv') ||
+                this.hasClass('diagram-element-art') ||
+                this.hasClass('diagram-element-pos') ||
+                this.hasClass('diagram-element-io') ||
+                this.hasClass('diagram-element-prep'))
+            {
+                var word = this.find('.diagram-word')
+                if (word.length)
+                {
+                    this.width(word.width());
+                }
+                else
+                {
+                    this.width(50);
+                }
+            }
+            // TODO - the rest
+
+            console.log("setWidth: this = " + this.attr('id') + ", width = " + this.width());
+            return this;
+        }
+        jQuery.fn.drawElement = function()
+        {
+            console.log("drawElement: this = " + this.attr('id'));
+            var children = this.children();
+            if (children.length)
+            {
+                console.log("drawElement: this = " + this.attr('id') + ", return children.drawElement()");
+                children.each(function() { $(this).drawElement() });
+            }
+            console.log("drawElement: this = " + this.attr('id') + ", return this.setOffset().setWidth()");
+            return this.setOffset().setWidth();
+        }
+        jQuery.fn.drawClause = function()
+        {
+            var clause = this.closest('.diagram-clause');
+            if (!clause.length)
+            {
+                alert("something is very wrong... can't find diagram-clause")
+                return;
+            }
+            clause.children().each(function() { $(this).drawElement(); });
+            return this;
         }
         function addPart(part, event, container)
         {
@@ -382,20 +464,24 @@
                 case 's':
                     // a subject requires a new clause
                     container = $('#diagram');
-                    container = $('<table />')
-                        .addClass('diagram-clause')
-                        .attr('id', 'diagram-clause')
+                    /*container = $('<table />')
+                        .addClass('diagram-clause-table')
+                        .attr('id', 'diagram-clause-table')
                         .offset({left: event.originalEvent.offsetX, top: event.originalEvent.offsetY})
                         .appendTo(container);
                     container = $('<tbody />')
-                        .addClass('diagram-clause-body')
+                        .addClass('diagram-clause-table-body')
                         .appendTo(container);
                     container = $('<tr />')
-                        .addClass('diagram-clause-basic')
+                        .addClass('diagram-clause-table-row-parts')
                         .appendTo(container);
                     $('<tr />')
-                        .addClass('diagram-clause-modifiers')
-                        .appendTo(container.parent());
+                        .addClass('diagram-clause-table-row-modifiers')
+                        .appendTo(container.parent());*/
+                    container = $('<div />')
+                        .addClass('diagram-clause')
+                        .offset({left: event.originalEvent.offsetX, top: event.originalEvent.offsetY})
+                        .appendTo(container);
                     console.log("addPart: part=s container=" + container.attr('id'));
                     break;
                 case 'v':
@@ -405,11 +491,11 @@
                 case 'pa':
                     // a verb, verb phrase, direct object, predicate nominative, or predicate adjective
                     // applies to an existing clause
-                    container = container.closest('.diagram-clause-basic');
-                    if (!container.length)
-                    {
-                        container = $('.diagram-clause');
-                    }
+                    container = container.closest('.diagram-clause'); // ('.diagram-clause-table-row-parts');
+                    //if (!container.length)
+                    //{
+                    //    container = $('.diagram-clause-table');
+                    //}
                     if (!container.length)
                     {
                         alert("cannot add "+part+", clause required")
@@ -487,63 +573,57 @@
                         alert("cannot add a "+part+", element required")
                         return;
                     }
-                    var diagramElement = container.closest('.diagram-element');
-                    if (!diagramElement.length)
-                    {
-                        alert("something is very wrong... can't find diagram-element");
-                        return;
-                    }
-                    var clauseBasic = container.closest('.diagram-clause-basic');
-                    if (!clauseBasic.length)
-                    {
-                        alert("something is very wrong... can't find diagram-clause-basic");
-                        return;
-                    }
-                    var clauseBody = clauseBasic.closest('.diagram-clause-body');
-                    if (!clauseBody.length)
-                    {
-                        alert("something is very wrong... can't find diagram-clause-body");
-                        return;
-                    }
-                    var clauseModifiers = clauseBody.children('.diagram-clause-modifiers');
-                    if (!clauseModifiers.length)
-                    {
-                        alert("something is very wrong... can't find diagram-clause-modifiers");
-                        return;
-                    }
-                    var diagramModifiers = clauseModifiers.children('#'+diagramElement.attr('id'));
-                    if (!diagramModifiers.length)
-                    {
-                        alert("something is very wrong... can't find modifiers");
-                        return;
-                    }
-                    var modifiersTable = diagramModifiers.children("table");
-                    if (!modifiersTable.length)
-                    {
-                        var modifiersTable = $("<table />")
-                            .appendTo(diagramModifiers);
-                        var modifiersBody = $('<tbody />')
-                            .appendTo(modifiersTable);
-                        var modifiersRow = $('<tr />')
-                            .appendTo(modifiersBody);
-                        container = modifiersRow;
-                    }
-                    else
-                    {
-                        var modifiersBody = modifiersTable.children('tbody');
-                        if (!modifiersBody.length)
-                        {
-                            alert("something is very wrong... can't find modifiers body");
-                            return;
-                        }
-                        var modifiersRow = modifiersBody.children('tr');
-                        if (!modifiersRow.length)
-                        {
-                            alert("something is very wrong... can't find modifiers row");
-                            return;
-                        }
-                        container = modifiersRow;
-                    }
+                    //var diagramElement = container.closest('.diagram-element');
+                    //if (!diagramElement.length)
+                    //{
+                    //    alert("something is very wrong... can't find diagram-element");
+                    //    return;
+                    //}
+                    //var clauseBody = container.closest('.diagram-clause-table-body');
+                    //if (!clauseBody.length)
+                    //{
+                    //    alert("something is very wrong... can't find diagram-clause-table-body");
+                    //    return;
+                    //}
+                    //var clauseModifiers = clauseBody.children('.diagram-clause-table-row-modifiers');
+                    //if (!clauseModifiers.length)
+                    //{
+                    //    alert("something is very wrong... can't find diagram-clause-table-row-modifiers");
+                    //    return;
+                    //}
+                    //var diagramModifiers = clauseModifiers.children('#'+diagramElement.attr('id'));
+                    //if (!diagramModifiers.length)
+                    //{
+                    //    alert("something is very wrong... can't find modifiers");
+                    //    return;
+                    //}
+                    //var modifiersTable = diagramModifiers.children("table");
+                    //if (!modifiersTable.length)
+                    //{
+                    //    var modifiersTable = $("<table />")
+                    //        .appendTo(diagramModifiers);
+                    //    var modifiersBody = $('<tbody />')
+                    //        .appendTo(modifiersTable);
+                    //    var modifiersRow = $('<tr />')
+                    //        .appendTo(modifiersBody);
+                    //    container = modifiersRow;
+                    //}
+                    //else
+                    //{
+                    //    var modifiersBody = modifiersTable.children('tbody');
+                    //    if (!modifiersBody.length)
+                    //    {
+                    //        alert("something is very wrong... can't find modifiers body");
+                    //        return;
+                    //    }
+                    //    var modifiersRow = modifiersBody.children('tr');
+                    //    if (!modifiersRow.length)
+                    //    {
+                    //        alert("something is very wrong... can't find modifiers row");
+                    //        return;
+                    //    }
+                    //    container = modifiersRow;
+                    //}
                     console.log("addPart: part=" + part + " container=" + container.attr('id'));
                     switch (part)
                     {
@@ -554,12 +634,12 @@
                         case 'pos':
                         case 'prep':
                             // on diagonal below word
-                            $('<td />')
-                                .css({'min-width': 20})
-                                .addClass('diagram-space')
-                                .attr('id', 'diagram-element-' + counter)
-                                .addClass('diagram-element-' + counter)
-                                .appendTo(container);
+                            //$('<td />')
+                            //    .css({'min-width': 20})
+                            //    .addClass('diagram-space')
+                            //    .attr('id', 'diagram-element-' + counter)
+                            //    .addClass('diagram-element-' + counter)
+                            //    .appendTo(container);
                             break;
                         /*case 'po':*/
                             // prepositional object drawn by preposition
@@ -597,37 +677,45 @@
                     }
                     break;
             }
-            return drawPart(part)
+            return $('<div />')
+                .css({'min-width': 50})
+                .drawPart(part)
+                .addClass('diagram-part')
                 .addClass('diagram-element')
                 .addClass('diagram-element-' + part)
                 .attr('id', 'diagram-element-' + counter)
                 .addClass('diagram-element-' + counter)
                 .appendTo(container)
-                .addModifiers(part, counter)
+                //.addModifiers(part, counter)
+                .drawClause()
                 .updateCounter(counter);
         }
         var diagramElementCounter = 0;
         var margin = 20;
-        function addWord(word, target)
+        jQuery.fn.addWord = function(word)
         {
             var counter = diagramElementCounter + 1;
-            var length = word.width();
-            var left = margin;
-            var top = 0 - word.height();
-            $('<div />')
-                .addClass('diagram-word')
-                .addClass('diagram-element')
-                .attr('id', 'diagram-element-' + counter)
-                .addClass('diagram-element-' + counter)
-                .text(word.text())
-                .css({'position': 'relative'})
-                //.width(length)
-                .offset({left: left, top: top})
-                .appendTo(target)
-                .updateCounter(counter);
-            //target.width(length + 2 * margin);
-            // TODO: recursive resizeChildren(target.parent())
-            target.parent().width(length + 2 * margin);
+            var diagramWord = this.children('.diagram-word');
+            if (diagramWord.length)
+            {
+                diagramWord.text(word.text())
+                    .updateCounter(counter);
+            }
+            else
+            {
+                $('<div />')
+                    .attr('id', 'diagram-element-' + counter)
+                    .addClass('diagram-word')
+                    .addClass('diagram-element')
+                    .addClass('diagram-element-' + counter)
+                    .text(word.text())
+                    .css({'text-align': 'center', 'position': 'relative'})
+                    .offset({left: 0, top: 0 - word.height()})
+                    .width(word.width() + 20 * 2)
+                    .appendTo(this)
+                    .updateCounter(counter);
+            }
+            return this.drawClause();
         }
         function getEventTarget(event) {
             event = event || window.event;
@@ -635,7 +723,7 @@
         }
 
         $(document).ready(function() {
-            var sentence = "This is a test.";
+            var sentence = "Supercalifragalistic is simply quite atrocious.";
             var words = sentence.split(/[ ,]+/);
             words.forEach(function(word) {
                 $('<span />').appendTo('#sentence')
@@ -720,11 +808,11 @@
                 var activeText = $('#sentence .active');
                 if (activeText.length)
                 {
-                    var target = $('#diagram .diagram-part-target').closestToOffset({left: event.originalEvent.pageX, top: event.originalEvent.pageY});
+                    var target = $('#diagram .diagram-part-word-target').closestToOffset({left: event.originalEvent.pageX, top: event.originalEvent.pageY});
                     if (target)
                     {
                         console.log("#diagram click : " + target.attr('id') + " -> " + activeText.text());
-                        addWord(activeText, target);
+                        target.addWord(activeText);
                         activeText.removeClass('active');
                         return;
                     }
@@ -735,11 +823,11 @@
                     console.log("#diagram click : word=" + targetWord.text());
                     targetWord.addClass('active');
                 }
-                var targetPart = $("#diagram .diagram-part-target").closestToOffset({left: event.originalEvent.pageX, top: event.originalEvent.pageY});
+                /*var targetPart = $("#diagram .diagram-part-target").closestToOffset({left: event.originalEvent.pageX, top: event.originalEvent.pageY});
                 if (targetPart)
                 {
                     console.log("#diagram click : part=" + targetPart.attr('id'));
-                }
+                }*/
             })
             .droppable({
                 drop: function(event, ui) {
@@ -763,11 +851,11 @@
                     }
                     if (draggable.hasClass('sentence-word'))
                     {
-                        var target = $('#diagram .diagram-part-target').closestToOffset({left: event.originalEvent.pageX, top: event.originalEvent.pageY});
+                        var target = $('#diagram .diagram-part-word-target').closestToOffset({left: event.originalEvent.pageX, top: event.originalEvent.pageY});
                         if (target)
                         {
                             console.log("#diagram drop : " + target.attr('id') + " -> " + draggable.text());
-                            addWord($(draggable), target);
+                            target.addWord($(draggable));
                             $(draggable).removeClass('active');
                         }
                         return;
