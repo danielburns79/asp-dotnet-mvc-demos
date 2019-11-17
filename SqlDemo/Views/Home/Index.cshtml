@@ -365,7 +365,7 @@
             });
             return max;
         }
-        function totalWidth(elements)
+        function totalLineWidth(elements)
         {
             var total = 0;
             elements.each(function() {
@@ -373,21 +373,21 @@
                 var children = element.children();
                 if (children.length)
                 {
-                    total += totalWidth(children);
-                    console.log("totalWidth: this="+element.attr('id')+" "+element.attr('class')+"(total += totalWidth(children))="+total);
+                    total += totalLineWidth(children);
+                    console.log("totalLineWidth: this="+element.attr('id')+" "+element.attr('class')+"(total += totalLineWidth(children))="+total);
                 }
                 if (element.hasClass('diagram-part-line'))
                 {
                     total += element.getWidth();
-                    console.log("totalWidth: this="+element.attr('id')+" "+element.attr('class')+"(total += element.getWidth())="+total);
+                    console.log("totalLineWidth: this="+element.attr('id')+" "+element.attr('class')+"(total += element.getWidth())="+total);
                 }
                 if (element.hasClass('diagram-part-line-width-break'))
                 {
-                    console.log("totalWidth: this="+element.attr('id')+" "+element.attr('class')+", break");
+                    console.log("totalLineWidth: this="+element.attr('id')+" "+element.attr('class')+", break");
                     return false; // break out of elements.each
                 }
             });
-            console.log("totalWidth: this="+elements.attr('id')+" "+elements.attr('class')+", width=" + total);
+            console.log("totalLineWidth: this="+elements.attr('id')+" "+elements.attr('class')+", width=" + total);
             return total;
         }
         jQuery.fn.getWidth = function()
@@ -418,7 +418,7 @@
         }
         jQuery.fn.modifiersWidth = function()
         {
-            return totalWidth(this.children('.diagram-part'));
+            return totalLineWidth(this.children('.diagram-part')) + /*space*/ 20;
         }
         jQuery.fn.setWidth = function()
         {
@@ -483,7 +483,7 @@
                      this.hasClass('diagram-element-io') ||
                      this.hasClass('diagram-element-prep'))
             {
-                this.css({'left': totalWidth(this.prevAll('.diagram-part'))/* + 20*/});
+                this.css({'left': totalLineWidth(this.prevAll('.diagram-part')) + /*space*/ 20});
             }
             else if (this.hasClass('diagram-element-io-o') ||
                      this.hasClass('diagram-element-prep-o'))
@@ -538,7 +538,6 @@
             var container = this;
             var part = parts.getPartsText();
             var counter = diagramElementCounter + 1;
-            // TODO - if this is a conj, then add another part to the conj
             switch (part)
             {
                 // TODO - conj-s, conj-v, etc
@@ -607,7 +606,7 @@
                     break;
                 case 'conj':
                     // a conjunction applies to two or more existing parts
-                    // TODO
+                    // TODO - upgrade container to conj-<container-part> OR if container is conj-<part> add another <part> to conj-<part>
                     alert("cannot add a conjunction, not implemented");
                     return;
                     break;
@@ -649,6 +648,7 @@
             {
                 // TODO - upgrade v to vp, others?
                 diagramWord.text(word.text())
+                    .width(word.width() + 20 * 2)
                     .updateCounter(counter);
             }
             else
