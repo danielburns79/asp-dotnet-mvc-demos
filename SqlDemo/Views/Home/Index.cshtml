@@ -88,7 +88,7 @@
     <script>
         function angleRotate(p, angle, anchor)
         {
-            var values = angle.match(/[\d]+/g);
+            var values = angle.match(/[\-\d]+/g);
             var _sin = Math.sin(values[0] * Math.PI / 180);
             var _cos = Math.cos(values[0] * Math.PI / 180);
             var r = {
@@ -211,6 +211,10 @@
                 {
                     total += lineWidthWithModifiers(children, true);
                     //console.log("lineWidthWithModifiers: this="+element.attr('id')+" "+element.attr('class')+"(total += lineWidthWithModifiers(children))="+total);
+                }
+                if (element.hasClass('diagram-part-line-width-skip'))
+                {
+                    return true; // continue elements.each
                 }
                 if (element.hasClass('diagram-part-line'))
                 {
@@ -338,7 +342,19 @@
             {
                 this.width(this.wordWidth());
             }
-            // TODO - conj, ip, ger, exp, np
+            else if (this.hasClass('diagram-element-ip'))
+            {
+                // do nothing - pedestal widths are set
+            }
+            else if (this.hasClass('diagram-element-ip-v-d'))
+            {
+                this.width(this.wordWidth());
+            }
+            else if (this.hasClass('diagram-element-ip-v-h'))
+            {
+                this.width(this.wordWidth());
+            }
+            // TODO - conj, ger, exp, np
 
             console.log("setWidth: this = "+this.attr('id')+" "+this.attr('class')+", width = " + this.width());
             return this;
@@ -384,13 +400,11 @@
                 var diagonal = this.prev('.diagram-part-diagonal');
                 var diagonalOffset = diagonal.offset();
                 var transform = diagonal.css('transform');
-                //console.log("setOffset: io/prep - dx="+diagonalOffset.left+", dy="+diagonalOffset.top+"dw="+diagonal.width());
                 var diagonalBottom = transformRotate({x:diagonalOffset.left + diagonal.width(), y:diagonalOffset.top + diagonal.height()}, transform, {x: diagonalOffset.left, y:diagonalOffset.top});
                 this.css({'left': diagonalBottom.x - diagonalOffset.left, 'top': diagonalBottom.y - diagonalOffset.top - 3});
             }
             else if (this.hasClass('diagram-element-app'))
             {
-                //console.log("setoffset: app - parent.width="+this.parent().width());
                 this.css({'left': this.parent().width()});
             }
             else if (this.hasClass('diagram-element-part'))
@@ -408,7 +422,6 @@
                     context.moveTo(0, 0);
                     context.arcTo(0, p.y, p.x, p.y, p.x);
                     context.stroke();
-                    //console.log("setOffset: PART - DREW IT! p1x="+0+",p1y="+p.y+",p2x="+p.x+",p2y="+p.y+",r="+p.x)
                     var word = this.children('.diagram-part-curved').children('.diagram-word');
                     if (word.length)
                     {
@@ -425,7 +438,66 @@
                     return;
                 }
             }
-            // TODO - conj, ip, ger, exp, np
+            else if (this.hasClass('diagram-element-ip'))
+            {
+                // get width of diagonal verb
+                var pedestalVerbDiagonal = this.children('.diagram-element-ip-v-d').children('.diagram-part-line');
+                if (!pedestalVerbDiagonal) alert("cannot find ip-v-d line");
+                var verbWidth = pedestalVerbDiagonal.getWidth();
+                // left line offset
+                var pedestalLeft = this.children('.diagram-part-pedestal-left');
+                if (!pedestalLeft.length) alert("cannot find diagram-part-pedestal-left");
+                pedestalLeft.css({'left': verbWidth});
+                var leftWidth = pedestalLeft.getWidth();
+                // right line offset
+                var pedestalRight = this.children('.diagram-part-pedestal-right');
+                if (!pedestalRight.length) alert("cannot find diagram-part-pedestal-right");
+                pedestalRight.css({'left': verbWidth + leftWidth * 2, 'top': 3});
+                // center line offset
+                var pedestalCenter = this.children('.diagram-part-pedestal-center');
+                if (!pedestalCenter.length) alert("cannot find diagram-part-pedestal-center");
+                pedestalCenter.css({'left': verbWidth + leftWidth - 1, 'top': 0 - leftWidth + 3});
+            }
+            else if (this.hasClass('diagram-element-ip-v-d'))
+            {
+                // get width of diagonal verb
+                var pedestalVerbDiagonal = this.children('.diagram-part-line');
+                if (!pedestalVerbDiagonal) alert("cannot find ip-v-d line");
+                var verbWidth = pedestalVerbDiagonal.getWidth();
+                // get top of pedestal base
+                var pedestalLeft = this.prevAll('.diagram-part-pedestal-left');
+                if (!pedestalLeft.length) alert("cannot find diagram-part-pedestal-left");
+                var pedestalLeftOffset = pedestalLeft.offset();
+                var pedestalLeftTransform = pedestalLeft.css('transform');
+                var pedestalLeftTop = transformRotate({x: pedestalLeftOffset.left + pedestalLeft.width(), y: pedestalLeftOffset.top}, pedestalLeftTransform, {x: pedestalLeftOffset.left, y: pedestalLeftOffset.top});
+                // get top of pedestal
+                var pedestalCenter = this.prevAll('.diagram-part-pedestal-center');
+                if (!pedestalCenter.length) alert("cannot find diagram-part-pedestal-center");
+                var pedestalTop = {x: pedestalLeftTop.x + verbWidth, y: pedestalLeftTop.y - pedestalCenter.width()};
+                // get bottom of diagonal as if rotated around pedestalTop and then move diagonalBottom to pedestalTop
+                var diagonalBottom = transformRotate({x: pedestalTop.x + this.width(), y: pedestalTop.y}, 'rotate(60deg)', pedestalTop);
+                this.css({'left': pedestalTop.x - (diagonalBottom.x - pedestalTop.x) - pedestalLeftOffset.left + 1, 'top': pedestalTop.y - (diagonalBottom.y - pedestalTop.y) - pedestalLeftOffset.top + 3});
+            }
+            else if (this.hasClass('diagram-element-ip-v-h'))
+            {
+                // get width of diagonal verb
+                var pedestalVerbDiagonal = this.prev('.diagram-element-ip-v-d').children('.diagram-part-line');
+                if (!pedestalVerbDiagonal) alert("cannot find ip-v-d line");
+                var verbWidth = pedestalVerbDiagonal.getWidth();
+                // get top of pedestal base
+                var pedestalLeft = this.prevAll('.diagram-part-pedestal-left');
+                if (!pedestalLeft.length) alert("cannot find diagram-part-pedestal-left");
+                var pedestalLeftOffset = pedestalLeft.offset();
+                var pedestalLeftTransform = pedestalLeft.css('transform');
+                var pedestalLeftTop = transformRotate({x: pedestalLeftOffset.left + pedestalLeft.width(), y: pedestalLeftOffset.top}, pedestalLeftTransform, {x: pedestalLeftOffset.left, y: pedestalLeftOffset.top});
+                // get top of pedestal
+                var pedestalCenter = this.prevAll('.diagram-part-pedestal-center');
+                if (!pedestalCenter.length) alert("cannot find diagram-part-pedestal-center");
+                var pedestalTop = {x: pedestalLeftTop.x + verbWidth, y: pedestalLeftTop.y - pedestalCenter.width()};
+                // line starts are pedestalTop
+                this.css({'left': pedestalTop.x - pedestalLeftOffset.left + 1, 'top': pedestalTop.y - pedestalLeftOffset.top + 3});
+            }
+            // TODO - conj, ger, exp, np
             
             console.log("setOffset: this = "+this.attr('id')+" "+this.attr('class')+", left = " + this.offset().left);
             return this;
@@ -565,7 +637,6 @@
                     $('<canvas />')
                         .css({'all': 'revert'})
                         .appendTo(participle);
-                    // TODO
                     break;
                 case 'adj':
                 case 'adv':
@@ -650,20 +721,68 @@
                         .appendTo(this);
                     horizontal.addWord($('<span>(</span><span>)</span>'), counter);
                     break;
-                case 'ip':
-                    // on pedestal beginning with diagonal
-                    // TODO
-                    //break;
                 case 'ger':
                     // on pedestal beginning with staircase OR on staircase (object of preposition)
                     // TODO
                     //break;
+                case 'ip':
+                    // on pedestal beginning with diagonal
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .width(20)
+                        .css({'transform': 'rotate(-45deg)'})
+                        .attr('id', 'diagram-part-ip-pedestal-left')
+                        .addClass('diagram-part-pedestal')
+                        .addClass('diagram-part-pedestal-left')
+                        .addClass('diagram-part-line-width-skip')
+                        .appendTo(this);
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .width(20)
+                        .css({'transform': 'rotate(-135deg)'})
+                        .attr('id', 'diagram-part-ip-pedestal-right')
+                        .addClass('diagram-part-pedestal')
+                        .addClass('diagram-part-pedestal-right')
+                        .addClass('diagram-part-line-width-skip')
+                        .appendTo(this);
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .width(40)
+                        .css({'transform': 'rotate(-90deg)'})
+                        .attr('id', 'diagram-part-ip-pedestal-center')
+                        .addClass('diagram-part-pedestal')
+                        .addClass('diagram-part-pedestal-center')
+                        .addClass('diagram-part-line-width-skip')
+                        .appendTo(this);
+                    this.addElement('ip-v-d', counter);
+                    this.addElement('ip-v-h', counter);
+                    break;
+                case 'ip-v-d':
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .width('100%')
+                        .css({'transform': 'rotate(60deg)'})
+                        .attr('id', 'diagram-part-ip-v-diagonal')
+                        .addClass('diagram-part-ip-v-diagonal')
+                        .addClass('diagram-part-word-target')
+                        .appendTo(this);
+                    break;
+                case 'ip-v-h':
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .width('100%')
+                        .attr('id', 'diagram-part-ip-v-horizontal')
+                        .addClass('diagram-part-ip-v-horizontal')
+                        .addClass('diagram-part-target')
+                        .addClass('diagram-part-word-target')
+                        .appendTo(this);
+                    break;
                 case 'np':
                     // on pedestal with horizontal (recurse) and broken line from explective to verb
                     // TODO
                     //break;
                 case 'exp':
-                    // on horizontal connected to modified word via broken
+                    // on horizontal connected to modified word via broken - introduces a noun phrase
                     // TODO
                     alert("cannot draw a "+part+", not implemented");
                     break;
