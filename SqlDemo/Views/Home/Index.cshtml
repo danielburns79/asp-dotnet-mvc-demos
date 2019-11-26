@@ -382,7 +382,8 @@
             {
                 this.width(this.getWordWidth());
             }
-            else if (this.hasClass('diagram-element-ip'))
+            else if (this.hasClass('diagram-element-ip') ||
+                     this.hasClass('diagram-element-np'))
             {
                 // pedestal center width (height) is the max height of all modifiers
                 var pedestalCenter = this.children('.diagram-part-pedestal-center');
@@ -406,7 +407,8 @@
         }
         jQuery.fn.getPedestalHeight = function()
         {
-            if (this.hasClass('diagram-element-ip'))
+            if (this.hasClass('diagram-element-ip') ||
+                this.hasClass('diagram-element-np'))
             {
                 var pedestalLeft = this.children('.diagram-part-pedestal-left');
                 if (!pedestalLeft.length) alert("cannot find diagram-part-pedestal-left");
@@ -420,7 +422,8 @@
         }
         jQuery.fn.getPedestalWidth = function()
         {
-            if (this.hasClass('diagram-element-ip'))
+            if (this.hasClass('diagram-element-ip') ||
+                this.hasClass('diagram-element-np'))
             {
                 var pedestalLeft = this.children('.diagram-part-pedestal-left');
                 if (!pedestalLeft.length) alert("cannot find diagram-part-pedestal-left");
@@ -440,7 +443,8 @@
             }
             else if (this.hasClass('diagram-clause'))
             {
-                if (this.parent().hasClass('diagram-element-ip'))
+                if (this.parent().hasClass('diagram-element-ip') ||
+                    this.parent().hasClass('diagram-element-np'))
                 {
                     var clauseOffset = this.parent().getPedestalClauseOffset();
                     this.css({'left': clauseOffset.x, 'top': clauseOffset.y});
@@ -553,6 +557,30 @@
             else if (this.hasClass('diagram-element-ip-v-h'))
             {
                 this.css({'left': getWidthWithAppositives(this.prevAll('.diagram-part'))});
+            }
+            else if (this.hasClass('diagram-element-np'))
+            {
+                // get width of subject
+                var pedestalSubject = this.children('.diagram-clause').children('.diagram-element-s');
+                if (!pedestalSubject) alert("cannot find np s");
+                var subjectWidth = pedestalSubject.getWordWidth();
+                // get width of verb
+                var pedestalVerb = this.children('.diagram-clause').children('.diagram-element-v, .diagram-element-vp');
+                if (!pedestalVerb) alert("cannot find np v");
+                var verbWidth = pedestalVerb.getWordWidth();
+                // left line offset
+                var pedestalLeft = this.children('.diagram-part-pedestal-left');
+                if (!pedestalLeft.length) alert("cannot find diagram-part-pedestal-left");
+                pedestalLeft.css({'left': subjectWidth + (verbWidth / 2)});
+                var leftWidth = pedestalLeft.getWidth();
+                // right line offset
+                var pedestalRight = this.children('.diagram-part-pedestal-right');
+                if (!pedestalRight.length) alert("cannot find diagram-part-pedestal-right");
+                pedestalRight.css({'left': subjectWidth + (verbWidth / 2) + (leftWidth * 2), 'top': 3});
+                // center line offset
+                var pedestalCenter = this.children('.diagram-part-pedestal-center');
+                if (!pedestalCenter.length) alert("cannot find diagram-part-pedestal-center");
+                pedestalCenter.css({'left': subjectWidth + (verbWidth / 2) + leftWidth - 1, 'top': 0 - leftWidth + 3});
             }
 
             // TODO - conj, ger, exp, np
@@ -812,8 +840,40 @@
                     break;
                 case 'np':
                     // on pedestal with horizontal (recurse) and broken line from explective to verb
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .width(20)
+                        .css({'transform': 'rotate(-45deg)'})
+                        .attr('id', 'diagram-part-np-pedestal-left')
+                        .addClass('diagram-part-pedestal')
+                        .addClass('diagram-part-pedestal-left')
+                        .addClass('diagram-part-line-width-skip')
+                        .appendTo(this);
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .width(20)
+                        .css({'transform': 'rotate(-135deg)'})
+                        .attr('id', 'diagram-part-np-pedestal-right')
+                        .addClass('diagram-part-pedestal')
+                        .addClass('diagram-part-pedestal-right')
+                        .addClass('diagram-part-line-width-skip')
+                        .appendTo(this);
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .width(40)
+                        .css({'transform': 'rotate(-90deg)'})
+                        .attr('id', 'diagram-part-np-pedestal-center')
+                        .addClass('diagram-part-pedestal')
+                        .addClass('diagram-part-pedestal-center')
+                        .addClass('diagram-part-line-width-skip')
+                        .appendTo(this);
+                    var clause = $('<div />')
+                        .addClass('diagram-clause')
+                        .appendTo(this);
+                    clause.addElement('s', counter);
+                    clause.addElement('v', counter);
                     // TODO
-                    //break;
+                    break;
                 case 'ger':
                     // on pedestal beginning with staircase OR on staircase (object of preposition)
                     // TODO
