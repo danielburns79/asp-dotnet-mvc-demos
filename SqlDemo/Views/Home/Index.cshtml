@@ -86,6 +86,9 @@
 @section scripts
 {
     <script>
+
+        // TODO - move out of *.cshtml into *.js
+
         function angleRotate(p, angle, anchor)
         {
             var values = angle.match(/[\-\d]+/g);
@@ -172,9 +175,7 @@
                         return false;
                     }
                 }
-                console.log("closestToOffset: currentElement="+currentElement.attr('id')+", x1="+p1.x+", y1="+p1.y+", x2="+p2.x+", y2="+p2.y+", x3="+p3.x+", y3="+p3.y+", x4="+p4.x+", y4="+p4.y);
                 var distance = distanceToLineSegment({x: x, y: y}, p1, p4);
-                console.log("closestToOffset: distance="+distance);
                 if (minDistance === undefined || distance < minDistance)
                 {
                     minDistance = distance;
@@ -184,24 +185,54 @@
             });
             return closestElement;
         };
-        function maxWidth(elements)
+
+        // TODO - refactor creating/adding/drawing elements into classes
+
+        function maxModifiersHeight(elements)
         {
-            var max = 0;
+            var height = 0;
             elements.each(function() {
-                var width = $(this).getWidth();
-                if (width > max)
-                {
-                    max = width;
-                }
+                height = Math.max(height, $(this).getElementHeight(false));
             });
-            return max;
+            return height;
         }
-        function lineWidthWithModifiers(elements, includeAppositives)
+        jQuery.fn.getElementHeight = function(compound)
+        {
+            if (compound)
+            {
+                return maxHeight(this.children('.diagram-part-line')) + maxElementHeight(this.children('.diagram-element'));
+            }
+            else
+            {
+                return Math.max(maxHeight(this.children('.diagram-part-line')), maxElementHeight(this.children('.diagram-element')));
+            }
+        }
+        function maxElementHeight(elements)
+        {
+            var height = 0;
+            elements.each(function() {
+                height = Math.max(height, $(this).getElementHeight(true));
+            });
+            return height;
+        }
+        function maxHeight(elements)
+        {
+            var height = 0;
+            elements.each(function() {
+                var element = $(this);
+                if (element.hasClass('diagram-part-line-height-skip'))
+                {
+                    return true; // continue elements.each
+                }
+                height = Math.max(height, element.getHeight());
+            });
+            return height;
+        }
+        function getWidthWithModifiers(elements, includeAppositives)
         {
             var total = 0;
             elements.each(function() {
                 var element = $(this);
-                //console.log("lineWidthWithModifiers: this="+element.attr('id')+" "+element.attr('class')+", includeAppositives="+includeAppositives);
                 if (!includeAppositives && element.hasClass('diagram-element-app'))
                 {
                     return true; // continue elements.each
@@ -209,8 +240,7 @@
                 var children = element.children();
                 if (children.length)
                 {
-                    total += lineWidthWithModifiers(children, true);
-                    //console.log("lineWidthWithModifiers: this="+element.attr('id')+" "+element.attr('class')+"(total += lineWidthWithModifiers(children))="+total);
+                    total += getWidthWithModifiers(children, true);
                 }
                 if (element.hasClass('diagram-part-line-width-skip'))
                 {
@@ -219,12 +249,11 @@
                 if (element.hasClass('diagram-part-line'))
                 {
                     total += element.getWidth();
-                    //console.log("lineWidthWithModifiers: this="+element.attr('id')+" "+element.attr('class')+"(total += element.getWidth())="+total);
                 }
                 if (element.hasClass('diagram-part-curved'))
                 {
                     var p = transformRotate(
-                            {x: Math.max(element.parent().wordWidth(), 50), y: 0},
+                            {x: Math.max(element.parent().getWordWidth(), 50), y: 0},
                             'rotate(45deg)',
                             {x: 0, y: 0}
                         );
@@ -232,7 +261,6 @@
                 }
                 if (element.hasClass('diagram-part-line-width-break'))
                 {
-                    //console.log("lineWidthWithModifiers: this="+element.attr('id')+" "+element.attr('class')+", break");
                     var appositive = element.next('.diagram-element-app');
                     if (appositive.length)
                     {
@@ -241,10 +269,9 @@
                     return false; // break elements.each
                 }
             });
-            //console.log("lineWidthWithModifiers: this="+elements.attr('id')+" "+elements.attr('class')+", width=" + total);
             return total;
         }
-        function lineWidthWithAppositives(elements)
+        function getWidthWithAppositives(elements)
         {
             var total = 0;
             elements.each(function() {
@@ -259,7 +286,7 @@
                     if (child.hasClass('diagram-part-curved'))
                     {
                         var p = transformRotate(
-                                {x: Math.max(child.parent().wordWidth(), 50), y: 0},
+                                {x: Math.max(child.parent().getWordWidth(), 50), y: 0},
                                 'rotate(45deg)',
                                 {x: 0, y: 0}
                             );
@@ -273,6 +300,18 @@
             });
             return total;
         }
+        jQuery.fn.getHeight = function()
+        {
+            elementOffset = this.offset();
+            p1 = { x: elementOffset.left, y: elementOffset.top };
+            p2 = { x: elementOffset.left + this.width(), y: p1.y };
+            var transform = this.css('transform');
+            if (transform && transform.search('none') < 0)
+            {
+                p2 = transformRotate(p2, transform, p1);
+            }
+            return p2.y - p1.y;
+        }
         jQuery.fn.getWidth = function()
         {
             elementOffset = this.offset();
@@ -283,10 +322,9 @@
             {
                 p2 = transformRotate(p2, transform, p1);
             }
-            //console.log("getWidth: this="+this.attr('id')+" "+this.attr('class')+", width=" + (p2.x - p1.x));
             return p2.x - p1.x;
         }
-        jQuery.fn.wordWidth = function()
+        jQuery.fn.getWordWidth = function()
         {
             var line = this.children('.diagram-part-line, .diagram-part-curved');
             if (line.length)
@@ -294,14 +332,12 @@
                 var word = line.children('.diagram-word');
                 if (word.length)
                 {
-                    //console.log("wordWidth: this="+this.attr('id')+" "+this.attr('class')+", word="+word.text()+", width="+word.width());
-                    return word.childrenWidth('span') + 20 * 2; // word.width();
+                    return word.getWidthOfChildren('span') + 20 * 2;
                 }
             }
-            //console.log("wordWidth: this="+this.attr('id')+" "+this.attr('class')+", width=50 (default)");
             return 50;
         }
-        jQuery.fn.childrenWidth = function(selector)
+        jQuery.fn.getWidthOfChildren = function(selector)
         {
             var total = 0;
             this.children(selector).each(function() {
@@ -313,7 +349,11 @@
         {
             if (this.hasClass('diagram-word'))
             {
-                this.width(this.childrenWidth('span') + 20 * 2);
+                this.width(this.getWidthOfChildren('span') + 20 * 2);
+            }
+            else if (this.hasClass('diagram-clause'))
+            {
+                // do nothing
             }
             else if (this.hasClass('diagram-element-s') ||
                      this.hasClass('diagram-element-v') ||
@@ -326,38 +366,71 @@
                      this.hasClass('diagram-element-pos') ||
                      this.hasClass('diagram-element-app'))                
             {
-                this.width(Math.max(this.wordWidth(), lineWidthWithModifiers(this.children('.diagram-part'), false) + /*space*/ 20));
+                this.width(Math.max(this.getWordWidth(), getWidthWithModifiers(this.children('.diagram-part'), false) + /*space*/ 20));
             }
             else if (this.hasClass('diagram-element-io-o') ||
                      this.hasClass('diagram-element-prep-o'))
             {
-                this.width(Math.max(this.wordWidth(), lineWidthWithModifiers(this.children('.diagram-part'), true) + /*space*/ 20));
+                this.width(Math.max(this.getWordWidth(), getWidthWithModifiers(this.children('.diagram-part'), true) + /*space*/ 20));
             }
             else if (this.hasClass('diagram-element-io') ||
                      this.hasClass('diagram-element-prep'))
             {
-                this.width(this.wordWidth());
+                this.width(this.getWordWidth());
             }
             else if (this.hasClass('diagram-element-part'))
             {
-                this.width(this.wordWidth());
+                this.width(this.getWordWidth());
             }
             else if (this.hasClass('diagram-element-ip'))
             {
-                // do nothing - pedestal widths are set
+                // pedestal center width (height) is the max height of all modifiers
+                var pedestalCenter = this.children('.diagram-part-pedestal-center');
+                if (!pedestalCenter.length) alert("cannot find diagram-part-pedestal-center");
+                pedestalCenter.width(Math.max(40, maxModifiersHeight(this.children('.diagram-clause').children('.diagram-part'))));
             }
             else if (this.hasClass('diagram-element-ip-v-d'))
             {
-                this.width(this.wordWidth());
+                this.width(this.getWordWidth());
             }
             else if (this.hasClass('diagram-element-ip-v-h'))
             {
-                this.width(this.wordWidth());
+                this.width(Math.max(this.getWordWidth(), getWidthWithModifiers(this.children('.diagram-part'), false) + /*space*/ 20));
             }
+
             // TODO - conj, ger, exp, np
 
-            console.log("setWidth: this = "+this.attr('id')+" "+this.attr('class')+", width = " + this.width());
+            // TODO - conj-s, conj-v, etc
+
             return this;
+        }
+        jQuery.fn.getPedestalHeight = function()
+        {
+            if (this.hasClass('diagram-element-ip'))
+            {
+                var pedestalLeft = this.children('.diagram-part-pedestal-left');
+                if (!pedestalLeft.length) alert("cannot find diagram-part-pedestal-left");
+                var pedestalLeftTransform = pedestalLeft.css('transform');
+                var pedestalLeftTop = transformRotate({x: pedestalLeft.width(), y: 0}, pedestalLeftTransform, {x: 0, y: 0});
+                var pedestalCenter = this.children('.diagram-part-pedestal-center');
+                if (!pedestalCenter.length) alert("cannot find diagram-part-pedestal-center");
+                return -pedestalLeftTop.y + pedestalCenter.width();
+            }
+            alert("cannot get pedestal height");
+        }
+        jQuery.fn.getPedestalWidth = function()
+        {
+            if (this.hasClass('diagram-element-ip'))
+            {
+                var pedestalLeft = this.children('.diagram-part-pedestal-left');
+                if (!pedestalLeft.length) alert("cannot find diagram-part-pedestal-left");
+                return pedestalLeft.getWidth() * 2;
+            }
+            alert("cannot get pedestal width");
+        }
+        jQuery.fn.getPedestalClauseOffset = function()
+        {
+            return {x: this.getPedestalWidth() / 2, y: -this.getPedestalHeight()};
         }
         jQuery.fn.setOffset = function()
         {
@@ -365,7 +438,14 @@
             {
                 this.css({'top': 0 - this.height()});
             }
-            // TODO - conj-s, conj-v, etc
+            else if (this.hasClass('diagram-clause'))
+            {
+                if (this.parent().hasClass('diagram-element-ip'))
+                {
+                    var clauseOffset = this.parent().getPedestalClauseOffset();
+                    this.css({'left': clauseOffset.x, 'top': clauseOffset.y});
+                }
+            }
             else if (this.hasClass('diagram-element-s'))
             {
                 // leave offset as 0,0
@@ -377,12 +457,16 @@
             {
                 if (this.parent().hasClass('diagram-element-part'))
                 {
-                    var p = transformRotate({x: this.parent().wordWidth(), y:0}, 'rotate(45deg)', {x: 0, y: 0});
+                    var p = transformRotate({x: this.parent().getWordWidth(), y:0}, 'rotate(45deg)', {x: 0, y: 0});
                     this.css({'left': 0 + p.x, 'top': 0 + p.y - 3});
+                }
+                else if (this.parent().hasClass('diagram-element-ip-v-h'))
+                {
+                    this.css({'left': this.parent().getWidth()});
                 }
                 else
                 {
-                    this.css({'left': lineWidthWithAppositives(this.prevAll('.diagram-part'))});
+                    this.css({'left': getWidthWithAppositives(this.prevAll('.diagram-part'))});
                 }
             }
             else if (this.hasClass('diagram-element-adj') ||
@@ -392,7 +476,7 @@
                      this.hasClass('diagram-element-io') ||
                      this.hasClass('diagram-element-prep'))
             {
-                this.css({'left': lineWidthWithModifiers(this.prevAll('.diagram-part'), false) + /*space*/ 20});
+                this.css({'left': getWidthWithModifiers(this.prevAll('.diagram-part'), false) + /*space*/ 20});
             }
             else if (this.hasClass('diagram-element-io-o') ||
                      this.hasClass('diagram-element-prep-o'))
@@ -409,8 +493,8 @@
             }
             else if (this.hasClass('diagram-element-part'))
             {
-                this.css({'left': lineWidthWithModifiers(this.prevAll('.diagram-part'), false) + /*space*/ 20});
-                var p = transformRotate({x: this.wordWidth(), y:0}, 'rotate(45deg)', {x: 0, y: 0});
+                this.css({'left': getWidthWithModifiers(this.prevAll('.diagram-part'), false) + /*space*/ 20});
+                var p = transformRotate({x: this.getWordWidth(), y:0}, 'rotate(45deg)', {x: 0, y: 0});
                 var canvas = this.children('.diagram-part-curved').children('canvas')[0];
                 if (canvas.getContext)
                 {
@@ -441,7 +525,7 @@
             else if (this.hasClass('diagram-element-ip'))
             {
                 // get width of diagonal verb
-                var pedestalVerbDiagonal = this.children('.diagram-element-ip-v-d').children('.diagram-part-line');
+                var pedestalVerbDiagonal = this.children('.diagram-clause').children('.diagram-element-ip-v-d').children('.diagram-part-line');
                 if (!pedestalVerbDiagonal) alert("cannot find ip-v-d line");
                 var verbWidth = pedestalVerbDiagonal.getWidth();
                 // left line offset
@@ -463,43 +547,18 @@
                 // get width of diagonal verb
                 var pedestalVerbDiagonal = this.children('.diagram-part-line');
                 if (!pedestalVerbDiagonal) alert("cannot find ip-v-d line");
-                var verbWidth = pedestalVerbDiagonal.getWidth();
-                // get top of pedestal base
-                var pedestalLeft = this.prevAll('.diagram-part-pedestal-left');
-                if (!pedestalLeft.length) alert("cannot find diagram-part-pedestal-left");
-                var pedestalLeftOffset = pedestalLeft.offset();
-                var pedestalLeftTransform = pedestalLeft.css('transform');
-                var pedestalLeftTop = transformRotate({x: pedestalLeftOffset.left + pedestalLeft.width(), y: pedestalLeftOffset.top}, pedestalLeftTransform, {x: pedestalLeftOffset.left, y: pedestalLeftOffset.top});
-                // get top of pedestal
-                var pedestalCenter = this.prevAll('.diagram-part-pedestal-center');
-                if (!pedestalCenter.length) alert("cannot find diagram-part-pedestal-center");
-                var pedestalTop = {x: pedestalLeftTop.x + verbWidth, y: pedestalLeftTop.y - pedestalCenter.width()};
-                // get bottom of diagonal as if rotated around pedestalTop and then move diagonalBottom to pedestalTop
-                var diagonalBottom = transformRotate({x: pedestalTop.x + this.width(), y: pedestalTop.y}, 'rotate(60deg)', pedestalTop);
-                this.css({'left': pedestalTop.x - (diagonalBottom.x - pedestalTop.x) - pedestalLeftOffset.left + 1, 'top': pedestalTop.y - (diagonalBottom.y - pedestalTop.y) - pedestalLeftOffset.top + 3});
+                var bottom = transformRotate({x: pedestalVerbDiagonal.width(), y: 0}, 'rotate(60deg)', {x: 0, y: 0});
+                this.css({'left': 2, 'top': -bottom.y + 2});
             }
             else if (this.hasClass('diagram-element-ip-v-h'))
             {
-                // get width of diagonal verb
-                var pedestalVerbDiagonal = this.prev('.diagram-element-ip-v-d').children('.diagram-part-line');
-                if (!pedestalVerbDiagonal) alert("cannot find ip-v-d line");
-                var verbWidth = pedestalVerbDiagonal.getWidth();
-                // get top of pedestal base
-                var pedestalLeft = this.prevAll('.diagram-part-pedestal-left');
-                if (!pedestalLeft.length) alert("cannot find diagram-part-pedestal-left");
-                var pedestalLeftOffset = pedestalLeft.offset();
-                var pedestalLeftTransform = pedestalLeft.css('transform');
-                var pedestalLeftTop = transformRotate({x: pedestalLeftOffset.left + pedestalLeft.width(), y: pedestalLeftOffset.top}, pedestalLeftTransform, {x: pedestalLeftOffset.left, y: pedestalLeftOffset.top});
-                // get top of pedestal
-                var pedestalCenter = this.prevAll('.diagram-part-pedestal-center');
-                if (!pedestalCenter.length) alert("cannot find diagram-part-pedestal-center");
-                var pedestalTop = {x: pedestalLeftTop.x + verbWidth, y: pedestalLeftTop.y - pedestalCenter.width()};
-                // line starts are pedestalTop
-                this.css({'left': pedestalTop.x - pedestalLeftOffset.left + 1, 'top': pedestalTop.y - pedestalLeftOffset.top + 3});
+                this.css({'left': getWidthWithAppositives(this.prevAll('.diagram-part'))});
             }
+
             // TODO - conj, ger, exp, np
-            
-            console.log("setOffset: this = "+this.attr('id')+" "+this.attr('class')+", left = " + this.offset().left);
+
+            // TODO - conj-s, conj-v, etc
+
             return this;
         }
         jQuery.fn.setWidths = function()
@@ -509,7 +568,6 @@
             {
                 children.each(function() { $(this).setWidths() });
             }
-            console.log("setWidths: this = " + this.attr('id') + ", return this.setWidth()");
             return this.setWidth();
         }
         jQuery.fn.setOffsets = function()
@@ -519,21 +577,20 @@
             {
                 children.each(function() { $(this).setOffsets() });
             }
-            console.log("setOffsets: this = " + this.attr('id') + ", return this.setWidth()");
             return this.setOffset();
         }
         jQuery.fn.drawClause = function()
         {
+            // TODO - find top clause(es) and draw all children
             var clause = this.closest('.diagram-clause');
             if (!clause.length)
             {
-                alert("something is very wrong... can't find diagram-clause")
-                return;
+                return this;
             }
             // all widths must be calculated before any offsets can be calculated
             clause.children().each(function() { $(this).setWidths(); });
             clause.children().each(function() { $(this).setOffsets(); });
-            return this;
+            return clause.parent().drawClause();
         }
         jQuery.fn.getPartsText = function()
         {
@@ -584,6 +641,7 @@
                         .offset({left: 0, top: -20})
                         .attr('id', 'diagram-part-'+part+'-vertical')
                         .addClass('diagram-part-vertical')
+                        .addClass('diagram-part-line-height-skip')
                         .appendTo(this);
                     break;
                 case 'do':
@@ -604,6 +662,7 @@
                         .offset({left: 0, top: -20})
                         .attr('id', 'diagram-part-do-vertical')
                         .addClass('diagram-part-vertical')
+                        .addClass('diagram-part-line-height-skip')
                         .appendTo(this);
                     break;
                 case 'pn':
@@ -624,6 +683,7 @@
                         .offset({left: 0, top: -20})
                         .attr('id', 'diagram-part-do-vertical')
                         .addClass('diagram-part-vertical')
+                        .addClass('diagram-part-line-height-skip')
                         .appendTo(this);
                     break;
                 case 'part':
@@ -656,7 +716,6 @@
                 case 'prep':
                     // indirect object on horizontal at bottom of diagonal below word
                     // preposition on diagonal below word, object on horizontal at bottom of diagonal
-                    console.log("drawPart: prep")
                     var diagonal = $('<div />')
                         .addClass('diagram-part-line')
                         .css({'transform': 'rotate(60deg)'})
@@ -682,33 +741,6 @@
                         .addClass('diagram-part-line-width-break')
                         .appendTo(this);
                     break;
-                case 'conj':
-                    // on broken line between words
-                    // TODO
-                    //break;
-                case 'conj-s':
-                case 'conj-v':
-                case 'conj-do':
-                case 'conj-pn':
-                case 'conj-pa':
-                    // TODO
-                    //break;
-                case 'conj-io':
-                case 'conj-part':
-                case 'conj-adj':
-                case 'conj-adv':
-                case 'conj-art':
-                case 'conj-pos':
-                case 'conj-prep':
-                    // TODO
-                    //break;
-                case 'conj-app':
-                case 'conj-ip':
-                case 'conj-ger':
-                case 'conj-exp':
-                case 'conj-np':
-                    // TODO
-                    //break;
                 case 'app':
                     // in parentheses to the right of word
                     var horizontal = $('<div />')
@@ -721,10 +753,6 @@
                         .appendTo(this);
                     horizontal.addWord($('<span>(</span><span>)</span>'), counter);
                     break;
-                case 'ger':
-                    // on pedestal beginning with staircase OR on staircase (object of preposition)
-                    // TODO
-                    //break;
                 case 'ip':
                     // on pedestal beginning with diagonal
                     $('<div />')
@@ -754,8 +782,11 @@
                         .addClass('diagram-part-pedestal-center')
                         .addClass('diagram-part-line-width-skip')
                         .appendTo(this);
-                    this.addElement('ip-v-d', counter);
-                    this.addElement('ip-v-h', counter);
+                    var clause = $('<div />')
+                        .addClass('diagram-clause')
+                        .appendTo(this);
+                    clause.addElement('ip-v-d', counter);
+                    clause.addElement('ip-v-h', counter);
                     break;
                 case 'ip-v-d':
                     $('<div />')
@@ -765,6 +796,7 @@
                         .attr('id', 'diagram-part-ip-v-diagonal')
                         .addClass('diagram-part-ip-v-diagonal')
                         .addClass('diagram-part-word-target')
+                        .addClass('diagram-part-line-height-skip')
                         .appendTo(this);
                     break;
                 case 'ip-v-h':
@@ -775,15 +807,47 @@
                         .addClass('diagram-part-ip-v-horizontal')
                         .addClass('diagram-part-target')
                         .addClass('diagram-part-word-target')
+                        .addClass('diagram-part-line-width-break')
                         .appendTo(this);
                     break;
                 case 'np':
                     // on pedestal with horizontal (recurse) and broken line from explective to verb
                     // TODO
                     //break;
+                case 'ger':
+                    // on pedestal beginning with staircase OR on staircase (object of preposition)
+                    // TODO
+                    //break;
                 case 'exp':
                     // on horizontal connected to modified word via broken - introduces a noun phrase
                     // TODO
+                case 'conj':
+                    // on broken line between words
+                    // TODO
+                    //break;
+                case 'conj-s':
+                case 'conj-v':
+                case 'conj-do':
+                case 'conj-pn':
+                case 'conj-pa':
+                    // TODO
+                    //break;
+                case 'conj-io':
+                case 'conj-part':
+                case 'conj-adj':
+                case 'conj-adv':
+                case 'conj-art':
+                case 'conj-pos':
+                case 'conj-prep':
+                    // TODO
+                    //break;
+                case 'conj-app':
+                case 'conj-ip':
+                case 'conj-ger':
+                case 'conj-exp':
+                case 'conj-np':
+                    // TODO
+                    //break;
                     alert("cannot draw a "+part+", not implemented");
                     break;
             }
@@ -804,7 +868,6 @@
                         .addClass('diagram-clause')
                         .offset({left: event.originalEvent.offsetX, top: event.originalEvent.offsetY})
                         .appendTo(container);
-                    console.log("addpart: part=s container=" + container.attr('id'));
                     break;
                 case 'v':
                 case 'do':
@@ -846,14 +909,15 @@
                             }
                             // a direct object, predicate nominative, or predicate adjective
                             // requires an existing verb or verb phrase
-                            if (!container.children('.diagram-element-v').length && !container.hasClass('diagram-element-part'))
+                            if (!container.children('.diagram-element-v').length &&
+                                !container.hasClass('diagram-element-part') &&
+                                !container.children('.diagram-element-ip-v-h'))
                             {
                                 alert("cannot add a "+part+", verb/verb-phrase required");
                                 return;
                             }
                             break;
                     }
-                    console.log("addPart: part="+part+" container="+container.attr('id'));
                     break;
                 case 'io':
                     // an indirect object requries a verb or verb phrase
@@ -888,12 +952,12 @@
                         alert("cannot add a "+part+", element required")
                         return;
                     }
-                    console.log("addPart: part="+part+" container=" + container.attr('id'));
                     break;
                 default:
                     alert("something is very wrong... don't know what to do with a " + part);
                     break;
             }
+            console.log("addPart: part="+part+" container=" + container.attr('id'));
             return container
                 .addElement(part, counter)
                 .drawClause();
@@ -927,8 +991,6 @@
             }
             else*/ if (this.parent().parent().hasClass('diagram-element-app'))
             {
-                console.log("updateWord: app");
-                // TODO - add app word inside paranthesis
                 var elements = this.children('span');
                 if (!elements.length)
                 {
@@ -944,10 +1006,10 @@
                     $(elements[1]).text(words.text());
                 }
             }
+            // TODO - expletives
             // TODO - are there other special cases?
             else
             {
-                console.log("updateWord: else")
                 this.addClass('diagram-element-'+counter)
                     .children('span')
                         .text(words.text());
