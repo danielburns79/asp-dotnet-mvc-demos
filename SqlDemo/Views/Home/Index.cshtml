@@ -40,12 +40,14 @@
         /* table */
         height: 0;
         position: relative;
-        /*position: absolute;*/
+    }
+    .gerund-phrase {
+        height: 0;
+        position: relative;
     }
     .diagram-part {
         /* td */
         position: relative;
-        /*position: absolute;*/
         height: 0;
     }
     .diagram-part-diagonal {
@@ -65,7 +67,6 @@
         position: absolute;
     }
     .diagram-word {
-        /* default */
         position: relative;
     }
     .diagram-word.active {
@@ -398,8 +399,34 @@
             {
                 this.width(Math.max(this.getWordWidth(), getWidthWithModifiers(this.children('.diagram-part'), false) + /*space*/ 20));
             }
+            else if (this.hasClass('diagram-element-ger'))
+            {
+                // pedestal width (height) is gerund-phrase height
+                var pedestal = this.children('.diagram-part-pedestal');
+                if (!pedestal.length) alert("cannot find diagram-part-pedestal");
+                pedestal.width(Math.max(40, maxModifiersHeight(this.children('.gerund-phrase').children('.diagram-part')) + 20));
+            }
+            else if (this.hasClass('gerund-phrase'))
+            {
+                // do nothing - elements have widths
+            }
+            else if (this.hasClass('diagram-element-ger-v'))
+            {
+                // staircase width(s) based on word width
+                var staircaseTop = this.children('.diagram-part-staircase-top');
+                if (!staircaseTop.length) alert("cannot find diagram-part-staircase-top");
+                var staircaseMiddle = this.children('.diagram-part-staircase-middle');
+                if (!staircaseMiddle.length) alert("cannot find diagram-part-staircase-middle");
+                var staircaseBottom = this.children('.diagram-part-staircase-bottom');
+                if (!staircaseBottom.length) alert("cannot find diagram-part-staircase-bottom");
+                var wordWidth = this.getWordWidth();
+                var p = transformRotate({x: wordWidth, y: 0}, 'rotate(15deg)', {x: 0, y: 0});
+                staircaseTop.width(p.x * (1/3));
+                staircaseMiddle.width(p.y);
+                staircaseBottom.width(p.x * (2/3));
+            }
 
-            // TODO - conj, ger, exp, np
+            // TODO - conj, prep-ger, exp
 
             // TODO - conj-s, conj-v, etc
 
@@ -418,6 +445,12 @@
                 if (!pedestalCenter.length) alert("cannot find diagram-part-pedestal-center");
                 return -pedestalLeftTop.y + pedestalCenter.width();
             }
+            else if (this.hasClass('diagram-element-ger'))
+            {
+                var pedestal = this.children('.diagram-part-pedestal');
+                if (!pedestal.length) alert("cannot find diagram-part-pedestal");
+                return pedestal.width();
+            }
             alert("cannot get pedestal height");
         }
         jQuery.fn.getPedestalWidth = function()
@@ -428,6 +461,10 @@
                 var pedestalLeft = this.children('.diagram-part-pedestal-left');
                 if (!pedestalLeft.length) alert("cannot find diagram-part-pedestal-left");
                 return pedestalLeft.getWidth() * 2;
+            }
+            else if (this.hasClass('diagram-element-ger'))
+            {
+                return 0;
             }
             alert("cannot get pedestal width");
         }
@@ -582,8 +619,48 @@
                 if (!pedestalCenter.length) alert("cannot find diagram-part-pedestal-center");
                 pedestalCenter.css({'left': subjectWidth + (verbWidth / 2) + leftWidth - 1, 'top': 0 - leftWidth + 3});
             }
+            else if (this.hasClass('diagram-element-ger'))
+            {
+                // pedestal offset
+                var gerundVerb = this.children('.gerund-phrase').children('.diagram-element-ger-v');
+                if (!gerundVerb.length) alert("cannot find ger-v");
+                var verbWidth = gerundVerb.getWordWidth();
+                var pedestal = this.children('.diagram-part-pedestal');
+                if (!pedestal.length) alert("cannot find diagram-part-pedestal");
+                pedestal.css({'left': verbWidth / 2, 'top': 3});
+            }
+            else if (this.hasClass('gerund-phrase'))
+            {
+                // set gerund-phrase offsets based on pedestal
+                var gerundOffset = this.parent().getPedestalClauseOffset();
+                this.css({'left': gerundOffset.x, 'top': gerundOffset.y});
+            }
+            else if (this.hasClass('diagram-element-ger-v'))
+            {
+                // staircase offsets
+                var staircaseTop = this.children('.diagram-part-staircase-top');
+                if (!staircaseTop.length) alert("cannot find diagram-part-staircase-top");
+                var staircaseMiddle = this.children('.diagram-part-staircase-middle');
+                if (!staircaseMiddle.length) alert("cannot find diagram-part-staircase-middle");
+                var staircaseBottom = this.children('.diagram-part-staircase-bottom');
+                if (!staircaseBottom.length) alert("cannot find diagram-part-staircase-bottom");
+                var wordWidth = this.getWordWidth();
+                var p = transformRotate({x: wordWidth, y: 0}, 'rotate(15deg)', {x: 0, y: 0});
+                staircaseTop.css({'top': -p.y});
+                staircaseMiddle.css({'left': p.x * (1/3), 'top': -p.y});
+                staircaseBottom.css({'left': p.x * (1/3) - 3});
+                // diagram-word offsets and transform
+                var word = staircaseBottom.children('.diagram-word');
+                if (word.length)
+                {
+                    word.css({
+                            'transform': 'rotate(15deg) translate('+(-word.width()*(1/3))+'px, '+(-p.y)+'px)',
+                            'transform-origin': '0 0'
+                        });
+                }
+            }
 
-            // TODO - conj, ger, exp, np
+            // TODO - conj, prep-ger, exp
 
             // TODO - conj-s, conj-v, etc
 
@@ -622,7 +699,7 @@
         }
         jQuery.fn.getPartsText = function()
         {
-            return this.text(); // TODO - turn this into 's', 'v', etc, 'conj-s', 'conj-v', etc
+            return this.text(); // TODO - turn this into 's', 'v', etc, 'conj-s', 'conj-v', etc, 'prep-ger', etc
         }
         jQuery.fn.addElement = function(part, counter)
         {
@@ -872,10 +949,45 @@
                         .appendTo(this);
                     clause.addElement('s', counter);
                     clause.addElement('v', counter);
-                    // TODO
                     break;
                 case 'ger':
-                    // on pedestal beginning with staircase OR on staircase (object of preposition)
+                    // on pedestal beginning with staircase
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .css({'transform': 'rotate(-90deg)'})
+                        .attr('id', 'diagram-part-ger-pedestal')                        
+                        .addClass('diagram-part-pedestal')
+                        .addClass('diagram-part-line-height-skip')
+                        .appendTo(this);                    
+                    var gerund = $('<div />')
+                        .addClass('gerund-phrase')
+                        .appendTo(this);
+                    gerund.addElement('ger-v', counter);
+                    // gerund does not require a do, so don't automatically add one
+                    break;
+                case 'ger-v':
+                    // staircase
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .attr('id', 'diagram-part-ger-v-staircase-horizontal-top')
+                        .addClass('diagram-part-staircase-top')
+                        .appendTo(this);
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .css({'transform': 'rotate(90deg)'})
+                        .attr('id', 'diagram-part-ger-v-staircase-vertical')
+                        .addClass('diagram-part-staircase-middle')
+                        .appendTo(this);
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .attr('id', 'diagram-part-ger-v-staircase-horizontal-bottom')
+                        .addClass('diagram-part-staircase-bottom')
+                        .addClass('diagram-part-target')
+                        .addClass('diagram-part-word-target')
+                        .appendTo(this);
+                    break;
+                case 'prep-ger':
+                    // on staircase on diagonal of preposition (object of preposition)
                     // TODO
                     //break;
                 case 'exp':
@@ -934,8 +1046,8 @@
                 case 'pn':
                 case 'pa':
                     // a verb, verb phrase, direct object, predicate nominative, or predicate adjective
-                    // applies to an existing clause
-                    container = container.closest('.diagram-element-part, .diagram-clause').first();
+                    // applies to an existing clause, participle, or gerund phrase
+                    container = container.closest('.diagram-element-part, .gerund-phrase, .diagram-clause').first();
                     if (!container.length)
                     {
                         alert("cannot add "+part+", clause required")
@@ -971,7 +1083,8 @@
                             // requires an existing verb or verb phrase
                             if (!container.children('.diagram-element-v').length &&
                                 !container.hasClass('diagram-element-part') &&
-                                !container.children('.diagram-element-ip-v-h'))
+                                !container.children('.diagram-element-ip-v-h').length &&
+                                !container.children('.diagram-element-ger-v').length)
                             {
                                 alert("cannot add a "+part+", verb/verb-phrase required");
                                 return;
@@ -999,8 +1112,10 @@
                 case 'art':
                 case 'pos':
                 case 'prep':
+                    // TODO - if container is prep, then upgrade prep to prep-ger
                 case 'ip':
                 case 'ger':
+                case 'prep-ger':
                 case 'exp':
                 case 'np':
                     // an indirect object, participal, adjective, adverb, article, possessive, preposition, appositive, infinitive phrase, gerund, explective, or noun phrase
@@ -1151,6 +1266,7 @@
             });
             $('#parts button').click(function(event) {
                 // TODO - allow conj to select another button
+                // TODO - allow prep to select ger
                 $('#parts button').removeClass('active');
                 $(this).addClass('active');
             })
