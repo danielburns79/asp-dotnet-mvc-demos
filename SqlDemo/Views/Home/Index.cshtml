@@ -412,7 +412,7 @@
             }
             else if (this.hasClass('diagram-element-ger-v'))
             {
-                // staircase width(s) based on word width
+                // staircase width(s) based on word width - ger & prep-ger
                 var staircaseTop = this.children('.diagram-part-staircase-top');
                 if (!staircaseTop.length) alert("cannot find diagram-part-staircase-top");
                 var staircaseMiddle = this.children('.diagram-part-staircase-middle');
@@ -425,8 +425,12 @@
                 staircaseMiddle.width(p.y);
                 staircaseBottom.width(p.x * (2/3));
             }
+            else if (this.hasClass('diagram-element-prep-ger'))
+            {
+                this.width(this.getWordWidth());
+            }
 
-            // TODO - conj, prep-ger, exp
+            // TODO - conj, exp
 
             // TODO - conj-s, conj-v, etc
 
@@ -631,13 +635,28 @@
             }
             else if (this.hasClass('gerund-phrase'))
             {
-                // set gerund-phrase offsets based on pedestal
-                var gerundOffset = this.parent().getPedestalClauseOffset();
-                this.css({'left': gerundOffset.x, 'top': gerundOffset.y});
+                if (this.parent().hasClass('diagram-element-ger'))
+                {
+                    // set gerund-phrase offsets based on pedestal
+                    var gerundOffset = this.parent().getPedestalClauseOffset();
+                    this.css({'left': gerundOffset.x, 'top': gerundOffset.y});
+                }
+                else if (this.parent().hasClass('diagram-element-prep-ger'))
+                {
+                    // bottom of preposition diagonal
+                    var diagonal = this.prev('.diagram-part-diagonal');
+                    var diagonalOffset = diagonal.offset();
+                    var transform = diagonal.css('transform');
+                    var diagonalBottom = transformRotate({x:diagonalOffset.left + diagonal.width(), y:diagonalOffset.top + diagonal.height()}, transform, {x: diagonalOffset.left, y:diagonalOffset.top});
+                    // height of staircase
+                    var wordWidth = this.children('.diagram-element-ger-v').getWordWidth();
+                    var p = transformRotate({x: wordWidth, y: 0}, 'rotate(15deg)', {x: 0, y: 0});
+                    this.css({'left': (diagonalBottom.x - diagonalOffset.left), 'top': (diagonalBottom.y - diagonalOffset.top - 3 + p.y)});
+                }
             }
             else if (this.hasClass('diagram-element-ger-v'))
             {
-                // staircase offsets
+                // staircase offsets - ger & prep-ger
                 var staircaseTop = this.children('.diagram-part-staircase-top');
                 if (!staircaseTop.length) alert("cannot find diagram-part-staircase-top");
                 var staircaseMiddle = this.children('.diagram-part-staircase-middle');
@@ -659,8 +678,12 @@
                         });
                 }
             }
+            else if (this.hasClass('diagram-element-prep-ger'))
+            {
+                this.css({'left': getWidthWithModifiers(this.prevAll('.diagram-part'), false) + /*space*/ 20});
+            }
 
-            // TODO - conj, prep-ger, exp
+            // TODO - conj, exp
 
             // TODO - conj-s, conj-v, etc
 
@@ -697,9 +720,24 @@
             clause.children().each(function() { $(this).setOffsets(); });
             return clause.parent().drawClause();
         }
-        jQuery.fn.getPartsText = function()
+        function sortParts(a, b)
         {
-            return this.text(); // TODO - turn this into 's', 'v', etc, 'conj-s', 'conj-v', etc, 'prep-ger', etc
+            if ($(a).text() === 'conj') return -1;
+            if ($(b).text() === 'conj') return 1;
+            if ($(a).text() === 'prep' && $(b).text() === 'ger') return -1;
+            if ($(a).text() === 'ger' && $(b).text() === 'prep') return 1;
+            return 0;
+        }
+        function getPartsText(parts)
+        {
+            parts = parts.sort(sortParts);
+            var part = '';
+            parts.each(function() {
+                var element = $(this);
+                if (part != '') part += '-';
+                part += element.text();
+            });
+            return part;
         }
         jQuery.fn.addElement = function(part, counter)
         {
@@ -958,7 +996,7 @@
                         .attr('id', 'diagram-part-ger-pedestal')                        
                         .addClass('diagram-part-pedestal')
                         .addClass('diagram-part-line-height-skip')
-                        .appendTo(this);                    
+                        .appendTo(this);
                     var gerund = $('<div />')
                         .addClass('gerund-phrase')
                         .appendTo(this);
@@ -988,8 +1026,19 @@
                     break;
                 case 'prep-ger':
                     // on staircase on diagonal of preposition (object of preposition)
-                    // TODO
-                    //break;
+                    var diagonal = $('<div />')
+                        .addClass('diagram-part-line')
+                        .css({'transform': 'rotate(60deg)'})
+                        .width('100%')
+                        .attr('id', 'diagram-part-'+part+'-diagonal')
+                        .addClass('diagram-part-diagonal')
+                        .addClass('diagram-part-word-target')
+                        .appendTo(this);
+                    var gerund = $('<div />')
+                        .addClass('gerund-phrase')
+                        .appendTo(this);
+                    gerund.addElement('ger-v', counter);
+                    break;
                 case 'exp':
                     // on horizontal connected to modified word via broken - introduces a noun phrase
                     // TODO
@@ -1021,14 +1070,17 @@
                     // TODO
                     //break;
                     alert("cannot draw a "+part+", not implemented");
-                    break;
+                    return;
+                default:
+                    alert("something is very wrong.. don't know how to draw a "+part);
+                    return;
             }
             return this;
         }
         jQuery.fn.addPart = function(parts, event)
         {
             var container = this;
-            var part = parts.getPartsText();
+            var part = getPartsText(parts);
             var counter = diagramElementCounter + 1;
             switch (part)
             {
@@ -1134,7 +1186,7 @@
                     break;
                 default:
                     alert("something is very wrong... don't know what to do with a " + part);
-                    break;
+                    return;
             }
             console.log("addPart: part="+part+" container=" + container.attr('id'));
             return container
@@ -1264,15 +1316,27 @@
                 $('<button />').appendTo('#parts')
                     .attr('id', 'part-button-'+part[1])
                     .addClass('part-button')
+                    .addClass('part-button-'+part[1])
                     .text(part[1]);
                 $('<span />').appendTo('#parts')
                     .text(' ');
             });
             $('#parts button').click(function(event) {
-                // TODO - allow conj to select another button
-                // TODO - allow prep to select ger
-                $('#parts button').removeClass('active');
-                $(this).addClass('active');
+                var element = $(this);
+                if (element.hasClass('active'))
+                {
+                    element.removeClass('active');
+                    return;
+                }
+                if (element.hasClass('part-button-ger'))
+                {
+                    $('#parts button').not('.part-button-conj').not('.part-button-prep').removeClass('active');
+                }
+                else
+                {
+                    $('#parts button').not('.part-button-conj').removeClass('active');
+                }
+                element.addClass('active');
             })
             .draggable({
                  cancel: '.no-drag',
@@ -1295,7 +1359,7 @@
                     else
                     {
                         console.log("#diagram click : " + this.id + " -> " + activeButtons.text());
-                        $(this).addPart(activeButtons), event;
+                        $(this).addPart(activeButtons, event);
                     }
                     activeButtons.removeClass('active');
                     return;
@@ -1325,7 +1389,8 @@
                     var draggable = $(ui.draggable);
                     if (draggable.hasClass('part-button'))
                     {
-                        // TODO - conj selected and draggable is another part
+                        // TODO - conj-s, conj-v, etc
+                        // TODO - prep-ger
                         var target = $('#diagram .diagram-part-target').closestToOffset({left: event.originalEvent.pageX, top: event.originalEvent.pageY}); 
                         if (target)
                         {
