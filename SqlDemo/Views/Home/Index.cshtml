@@ -1094,8 +1094,12 @@
                     break;
                 case 'io':
                     // an indirect object requries a verb or verb phrase
-                    // TODO
-                    alert("cannot add an indirect object, not implemente");
+                    container = container.closest('.diagram-element-v, .diagram-element-vp').first();
+                    if (!container.length)
+                    {
+                        alert("cannot add an indirect object, verb/verb-phrase required");
+                        return;
+                    }
                     break;
                 case 'conj':
                     // a conjunction applies to two or more existing parts
