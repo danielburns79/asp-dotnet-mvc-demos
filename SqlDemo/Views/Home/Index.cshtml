@@ -63,6 +63,16 @@
         margin: 0;
         border: 0;
     }
+    .diagram-part-dashed-line {
+        /* div */
+        transform-origin: 0 0;
+        height: 3px; /* Line width of 3 */
+        width: 3px;
+        background: repeating-linear-gradient(to right, black 0px, black 6px, transparent 6px, transparent 12px);
+        position: absolute;
+        margin: 0;
+        border: 0;
+    }
     .diagram-part-curved {
         position: absolute;
     }
@@ -280,6 +290,10 @@
                 var children = element.children();
                 children.each(function() {
                     var child = $(this);
+                    if (child.hasClass('diagram-part-line-width-skip'))
+                    {
+                        return true; // continue elements.each
+                    }
                     if (child.hasClass('diagram-part-line'))
                     {
                         total += child.getWidth();
@@ -429,10 +443,12 @@
             {
                 this.width(this.getWordWidth());
             }
+            else if (this.hasClass('diagram-element-exp'))
+            {
+                this.width(this.getWordWidth());
+            }
 
-            // TODO - conj, exp
-
-            // TODO - conj-s, conj-v, etc
+            // TODO - conj, conj-s, conj-v, etc
 
             return this;
         }
@@ -682,10 +698,27 @@
             {
                 this.css({'left': getWidthWithModifiers(this.prevAll('.diagram-part'), false) + /*space*/ 20});
             }
+            else if (this.hasClass('diagram-element-exp'))
+            {
+                // verb width
+                var phrase = this.parent();
+                var phraseOffset = phrase.offset();
+                var verb = phrase.children('.diagram-element-v, .diagram-element-vp');
+                if (!verb.length) alert("cannot find diagram-element-v/vp")
+                var verbWidth = verb.getWidth();
+                var verbOffset = verb.offset();
+                // get dashed line
+                var dashed = this.children('.diagram-part-dashed');
+                if (!dashed.length) alert("cannot find diagram-part-dashed");
+                // word width
+                var wordWidth = this.getWordWidth();
+                // offset of exp
+                this.css({'left': verbOffset.left - phraseOffset.left + (verbWidth / 2) - (wordWidth / 2), 'top': -20 + -dashed.width()});
+                // offset of dashed line
+                dashed.css({'left': (wordWidth / 2)});
+            }
 
-            // TODO - conj, exp
-
-            // TODO - conj-s, conj-v, etc
+            // TODO - conj, conj-s, conj-v, etc
 
             return this;
         }
@@ -1041,7 +1074,25 @@
                     break;
                 case 'exp':
                     // on horizontal connected to modified word via broken - introduces a noun phrase
-                    // TODO
+                    $('<div />')
+                        .addClass('diagram-part-dashed-line')
+                        .css({'transform': 'rotate(90deg)'})
+                        .width(36) /* set width - this will be the only thing above a verb */
+                        .attr('id', 'diagram-part-exp-dashed-vertical')
+                        .addClass('diagram-part-dashed')
+                        .addClass('diagram-part-vertical')
+                        .addClass('diagram-part-line-width-break')
+                        .addClass('diagram-part-line-width-skip')
+                        .appendTo(this);
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .width('100%')
+                        .attr('id', 'diagram-part-exp-horizontal')
+                        .addClass('diagram-part-horizontal')
+                        .addClass('diagram-part-word-target')
+                        .addClass('diagram-part-line-width-skip')
+                        .appendTo(this);
+                    break;
                 case 'conj':
                     // on broken line between words
                     // TODO
@@ -1153,6 +1204,15 @@
                         return;
                     }
                     break;
+                case 'exp':
+                    // an expletive requires a noun phrase
+                    container = container.closest('.diagram-element-np').first().children('.diagram-clause');
+                    if (!container.length)
+                    {
+                        alert("cannot add an explective, noun phrase required");
+                        return;
+                    }
+                    break;
                 case 'conj':
                     // a conjunction applies to two or more existing parts
                     // TODO - upgrade container to conj-<container-part> OR if container is conj-<part> add another <part> to conj-<part>
@@ -1172,7 +1232,6 @@
                 case 'ip':
                 case 'ger':
                 case 'prep-ger':
-                case 'exp':
                 case 'np':
                     // an indirect object, participal, adjective, adverb, article, possessive, preposition, appositive, infinitive phrase, gerund, explective, or noun phrase
                     // requires an existing part
