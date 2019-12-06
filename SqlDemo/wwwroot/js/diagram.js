@@ -97,6 +97,17 @@ jQuery.fn.closestToOffset = function(offset) {
     return closestElement;
 };
 
+jQuery.fn.drawLine = function(x1,y1, x2,y2)
+{
+    var length = Math.sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
+    var angle  = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+    var transform = 'rotate('+angle+'deg)';
+    this.css({'transform': transform});
+    this.width(length);
+    this.css({'left': x1, 'top': y1});
+    return this;
+}
+
 // TODO - refactor creating/adding/drawing elements into classes
 
 function maxModifiersHeight(elements)
@@ -104,17 +115,21 @@ function maxModifiersHeight(elements)
     var height = 0;
     elements.each(function() {
         height = Math.max(height, $(this).getElementHeight(false));
+        console.log("maxModifiersHeight: element="+$(this).attr('id')+" height="+height);
     });
+    console.log("maxModifiersHeight: height="+height);
     return height;
 }
 jQuery.fn.getElementHeight = function(compound)
 {
     if (compound)
     {
+        console.log("getElementHeight: compound element="+this.attr('id'));
         return maxHeight(this.children('.diagram-part-line')) + maxElementHeight(this.children('.diagram-element'));
     }
     else
     {
+        console.log("getElementHeight: !compound element="+this.attr('id'));
         return Math.max(maxHeight(this.children('.diagram-part-line')), maxElementHeight(this.children('.diagram-element')));
     }
 }
@@ -122,8 +137,16 @@ function maxElementHeight(elements)
 {
     var height = 0;
     elements.each(function() {
-        height = Math.max(height, $(this).getElementHeight(true));
+        var element = $(this);
+        if (element.hasClass('diagram-element-conj'))
+        {
+            height = Math.max(height, getHeightWithModifiers(element.children('.diagram-clause')));
+            console.log("maxElementHeight: conj element="+element.attr('id')+" height="+height);
+        }
+        height = Math.max(height, element.getElementHeight(true));
+        console.log("maxElementHeight: element="+element.attr('id')+" height="+height);
     });
+    console.log("maxElementHeight: height="+height);
     return height;
 }
 function maxHeight(elements)
@@ -136,7 +159,9 @@ function maxHeight(elements)
             return true; // continue elements.each
         }
         height = Math.max(height, element.getHeight());
+        console.log("maxHeight: element="+$(this).attr('id')+" height="+height);
     });
+    console.log("maxHeight: height="+height);
     return height;
 }
 jQuery.fn.getHeight = function()
@@ -149,7 +174,20 @@ jQuery.fn.getHeight = function()
     {
         p2 = transformRotate(p2, transform, p1);
     }
+    console.log("getHeight: element="+this.attr('id')+" height="+(p2.y-p1.y));
     return p2.y - p1.y;
+}
+function getHeightWithModifiers(elements)
+{
+    console.log("getHeightWithModifiers++");
+    var total = 0;
+    elements.each(function() {
+        var element = $(this);
+        total += Math.max(40, maxModifiersHeight(element.children('.diagram-part')));
+        console.log("getHeightWithModifiers element="+element.attr('id')+" total="+total);
+    });
+    console.log("getHeightWithModifiers total="+total);
+    return total;
 }
 
 function getWidthWithModifiers(elements, includeAppositives)
@@ -349,8 +387,17 @@ jQuery.fn.setWidth = function()
     {
         this.width(this.getWordWidth());
     }
+    else if(this.hasClass('diagram-element-conj-s') ||
+            this.hasClass('diagram-element-conj-v') ||
+            this.hasClass('diagram-element-conj-vp') ||
+            this.hasClass('diagram-element-conj-do') ||
+            this.hasClass('diagram-element-conj-pn') ||
+            this.hasClass('diagram-element-conj-pa'))
+    {
+        // will set width in setOffset with drawLine
+    }
 
-    // TODO - conj, conj-s, conj-v, etc
+    // TODO - conj, conj-v, etc
 
     return this;
 }
@@ -619,8 +666,36 @@ jQuery.fn.setOffset = function()
         // offset of dashed line
         dashed.css({'left': (wordWidth / 2)});
     }
+    else if(this.hasClass('diagram-element-conj-s') ||
+            this.hasClass('diagram-element-conj-v') ||
+            this.hasClass('diagram-element-conj-vp') ||
+            this.hasClass('diagram-element-conj-do') ||
+            this.hasClass('diagram-element-conj-pn') ||
+            this.hasClass('diagram-element-conj-pa'))
+    {
+        // offset of horizontal
+        var horizontal = this.children('.diagram-part-horizontal');
+        if (!horizontal.length) alert("cannot find diagram-part-horizontal");
+        horizontal.css({'left': getWidthWithAppositives(this.prevAll('.diagram-part'))});
+        // gets splits and clauses
+        var splits = this.children('.diagram-part-split');
+        if (!splits.length) alert("cannot find diagram-part-split");
+        var clauses = this.children('.diagram-clause');
+        if (!clauses.length) alert("cannot find diagram-clause");
+        var height = getHeightWithModifiers(clauses) + (20 * (clauses.length-1)) - getHeightWithModifiers(clauses.last());
+        var top = -(height / splits.length);
+        var left = getWidthWithAppositives(this.prevAll('.diagram-part')) + horizontal.width() + 20;
+        for (var i = 0; i < clauses.length && i < splits.length; i++)
+        {
+            // draw split lines
+            $(splits[i]).drawLine(left - 20, 0, left, top);
+            // offset of clause
+            $(clauses[i]).css({'left': left, 'top': top});
+            top += getHeightWithModifiers($(clauses[i])) + 20;
+        }
+    }
 
-    // TODO - conj, conj-s, conj-v, etc
+    // TODO - conj, conj-v, etc
 
     return this;
 }
@@ -1006,8 +1081,41 @@ jQuery.fn.drawPart = function(part, counter)
         case 'conj-do':
         case 'conj-pn':
         case 'conj-pa':
-            // TODO
-            //break;
+            this.addClass('diagram-element-conj');
+            $('<div />')
+                .addClass('diagram-part-line')
+                .width(20)
+                .attr('id', 'diagram-part-conj-horizontal')
+                .addClass('diagram-part-horizontal')
+                .appendTo(this);
+            var split1 = $('<div />')
+                .addClass('diagram-part-line')
+                .attr('id', 'diagram-part-split-1')
+                .addClass('diagram-part-split')
+                .appendTo(this);
+            var clause1 = $('<div />')
+                .addClass('diagram-clause')
+                .appendTo(this);
+            clause1.addElement(part.substring(5), counter);
+            var split2 = $('<div />')
+                .addClass('diagram-part-line')
+                .attr('id', 'diagram-part-split-2')
+                .addClass('diagram-part-split')
+                .appendTo(this);
+            var clause2 = $('<div />')
+                .addClass('diagram-clause')
+                .appendTo(this);
+            clause2.addElement(part.substring(5), counter);
+            $('<div />')
+                .addClass('diagram-part-dashed-line')
+                .css({'transform': 'rotate(90deg)'})
+                .attr('id', 'diagram-part-conj-dashed-vertical')
+                .addClass('diagram-part-dashed')
+                .addClass('diagram-part-vertical')
+                .addClass('diagram-part-line-width-break')
+                .addClass('diagram-part-line-width-skip')
+                .appendTo(this);        
+            break;
         case 'conj-io':
         case 'conj-part':
         case 'conj-adj':
@@ -1041,6 +1149,7 @@ jQuery.fn.addPart = function(parts, event)
     {
         // TODO - conj-s, conj-v, etc
         case 's':
+        case 'conj-s':
             // a subject requires a new clause - TODO - upgrade s to conj-s
             container = $('#diagram');
             container = $('<div />')
@@ -1049,9 +1158,13 @@ jQuery.fn.addPart = function(parts, event)
                 .appendTo(container);
             break;
         case 'v':
+        case 'conj-v':
         case 'do':
+        case 'conj-do':
         case 'pn':
+        case 'conj-pn':
         case 'pa':
+        case 'conj-pa':
             // a verb, verb phrase, direct object, predicate nominative, or predicate adjective
             // applies to an existing clause, participle, or gerund phrase
             container = container.closest('.diagram-element-part, .gerund-phrase, .diagram-clause').first();
