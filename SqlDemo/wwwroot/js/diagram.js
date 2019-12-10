@@ -60,7 +60,7 @@ jQuery.fn.closestToOffset = function(offset) {
         y = offset.top,
         p1, p2, p3, p4,
         distance, minDistance;
-    console.log("closestToOffset: x=" + x + ", y=" + y);
+    //console.log("closestToOffset: x=" + x + ", y=" + y);
     this.each(function() {
         var currentElement = $(this);
         elementOffset = currentElement.offset();
@@ -82,7 +82,7 @@ jQuery.fn.closestToOffset = function(offset) {
                 y <= p2.y)
             {
                 closestElement = currentElement;
-                console.log("closestToOffset: offset is within element " + currentElement.attr('id'));
+                //console.log("closestToOffset: offset is within element " + currentElement.attr('id'));
                 return false;
             }
         }
@@ -91,7 +91,7 @@ jQuery.fn.closestToOffset = function(offset) {
         {
             minDistance = distance;
             closestElement = currentElement;
-            console.log("closestToOffset: offset is close to element=" + currentElement.attr('id') + ", distance=" + distance);
+            //console.log("closestToOffset: offset is close to element=" + currentElement.attr('id') + ", distance=" + distance);
         }
     });
     return closestElement;
@@ -114,22 +114,33 @@ function maxModifiersHeight(elements)
 {
     var height = 0;
     elements.each(function() {
-        height = Math.max(height, $(this).getElementHeight(false));
-        console.log("maxModifiersHeight: element="+$(this).attr('id')+" height="+height);
+        var element = $(this);
+        // TODO - is this the right place for conj?
+        if (element.hasClass('diagram-element-conj'))
+        {
+            //console.log("maxModifiersHeight: element is diagram-element-conj");
+            height = Math.max(height, getBottomHeight(element.children('.diagram-clause')) + getTopHeight(element.children('.diagram-clause')));
+        }
+        else
+        {
+            //console.log("maxModifiersHeight: element="+element.attr('class')+" getElementHeight");
+            height = Math.max(height, element.getElementHeight(false));
+            //console.log("maxModifiersHeight: element="+element.attr('class')+" height="+height);
+        }
     });
-    console.log("maxModifiersHeight: height="+height);
+    //console.log("maxModifiersHeight: height="+height);
     return height;
 }
 jQuery.fn.getElementHeight = function(compound)
 {
     if (compound)
     {
-        console.log("getElementHeight: compound element="+this.attr('id'));
+        //console.log("getElementHeight: compound element="+this.attr('class')+" maxHeight + maxElementHeight");
         return maxHeight(this.children('.diagram-part-line')) + maxElementHeight(this.children('.diagram-element'));
     }
     else
     {
-        console.log("getElementHeight: !compound element="+this.attr('id'));
+        //console.log("getElementHeight: !compound element="+this.attr('class')+" maxHeight || maxElementHeight");
         return Math.max(maxHeight(this.children('.diagram-part-line')), maxElementHeight(this.children('.diagram-element')));
     }
 }
@@ -138,15 +149,11 @@ function maxElementHeight(elements)
     var height = 0;
     elements.each(function() {
         var element = $(this);
-        if (element.hasClass('diagram-element-conj'))
-        {
-            height = Math.max(height, getHeightWithModifiers(element.children('.diagram-clause')));
-            console.log("maxElementHeight: conj element="+element.attr('id')+" height="+height);
-        }
+        //console.log("maxElementHeight: element="+element.attr('class')+" getElementHeight");
         height = Math.max(height, element.getElementHeight(true));
-        console.log("maxElementHeight: element="+element.attr('id')+" height="+height);
+        //console.log("maxElementHeight: element="+element.attr('class')+" height="+height);
     });
-    console.log("maxElementHeight: height="+height);
+    //console.log("maxElementHeight: height="+height);
     return height;
 }
 function maxHeight(elements)
@@ -159,9 +166,9 @@ function maxHeight(elements)
             return true; // continue elements.each
         }
         height = Math.max(height, element.getHeight());
-        console.log("maxHeight: element="+$(this).attr('id')+" height="+height);
+        //console.log("maxHeight: element="+element.attr('class')+" height="+height);
     });
-    console.log("maxHeight: height="+height);
+    //console.log("maxHeight: height="+height);
     return height;
 }
 jQuery.fn.getHeight = function()
@@ -174,20 +181,78 @@ jQuery.fn.getHeight = function()
     {
         p2 = transformRotate(p2, transform, p1);
     }
-    console.log("getHeight: element="+this.attr('id')+" height="+(p2.y-p1.y));
+    //console.log("getHeight: element="+this.attr('class')+" height="+(p2.y-p1.y));
     return p2.y - p1.y;
 }
-function getHeightWithModifiers(elements)
+function getBottomHeight(elements)
 {
-    console.log("getHeightWithModifiers++");
+    //console.log("getBottomHeight++");
     var total = 0;
     elements.each(function() {
         var element = $(this);
-        total += Math.max(40, maxModifiersHeight(element.children('.diagram-part')));
-        console.log("getHeightWithModifiers element="+element.attr('id')+" total="+total);
+        //console.log("getBottomHeight element="+element.attr('class')+" maxModifiersHeight");
+        total += maxModifiersHeight(element.children('.diagram-element'));
+        //console.log("getBottomHeight element="+element.attr('class')+" total="+total);
     });
-    console.log("getHeightWithModifiers total="+total);
+    //console.log("getBottomHeight total="+total);
     return total;
+}
+function maxTopHeight(elements)
+{
+    var height = 0;
+    elements.each(function() {
+        var element = $(this);
+        //console.log("maxTopHeight: element="+element.attr('class'));
+        height = Math.max(height, maxTopHeight(element.children('.diagram-element')));
+        if (element.hasClass('diagram-element-s') ||
+            element.hasClass('diagram-element-v') ||
+            element.hasClass('diagram-element-vp') ||
+            element.hasClass('diagram-element-do') ||
+            element.hasClass('diagram-element-pn') ||
+            element.hasClass('diagram-element-pa'))
+        {
+            height = Math.max(height, element.getWordHeight());
+        }
+        else if (element.hasClass('diagram-element-ip') ||
+                 element.hasClass('diagram-element-np') ||
+                 element.hasClass('diagram-element-ger'))
+        {
+            //console.log("maxTopHeight: pedestal");
+            height = Math.max(height, element.getPedestalHeight() + getTopHeight(element.children('.diagram-clause')));
+        }
+        else if (element.hasClass('diagram-element-conj'))
+        {
+            height = Math.max(height, getTopHeight(element.children('.digram-clause')));
+        }
+    });
+    return height;
+}
+function getTopHeight(elements)
+{
+    var height = 0;
+    elements.each(function() {
+        var element = $(this);
+        //console.log("getTopHeight: element="+element.attr('class'));
+        height += maxTopHeight(element.children('.diagram-element'));
+    });
+    return height;
+}
+jQuery.fn.getWordHeight = function()
+{
+    var line = this.children('.diagram-part-line, .diagram-part-curved');
+    if (line.length)
+    {
+        var word = line.children('.diagram-word');
+        if (word.length)
+        {
+            var span = word.children('span');
+            if (span.length)
+            {
+                return span.height() + 5;
+            }
+        }
+    }
+    return 20;
 }
 
 function getWidthWithModifiers(elements, includeAppositives)
@@ -280,14 +345,17 @@ jQuery.fn.getWidth = function()
 }
 jQuery.fn.getWordWidth = function()
 {
-    var line = this.children('.diagram-part-line, .diagram-part-curved');
-    if (line.length)
+    if (this.hasClass('diagram-word'))
     {
-        var word = line.children('.diagram-word');
-        if (word.length)
-        {
-            return word.getWidthOfChildren('span') + 20 * 2;
-        }
+        return this.getWidthOfChildren('span') + 20 * 2;
+    }
+    else if (this.hasClass('diagram-part-line') || this.hasClass('diagram-part-curved') || this.hasClass('diagram-part-dashed'))
+    {
+        return this.children('.diagram-word').first().getWordWidth();
+    }
+    else if (this.hasClass('diagram-element'))
+    {
+        return this.children('.diagram-part-line, .diagram-part-curved, .diagram-part-dashed').first().getWordWidth();
     }
     return 50;
 }
@@ -298,6 +366,47 @@ jQuery.fn.getWidthOfChildren = function(selector)
         total += $(this).width();
     });
     return total;
+}
+
+jQuery.fn.getPedestalHeight = function()
+{
+    if (this.hasClass('diagram-element-ip') ||
+        this.hasClass('diagram-element-np'))
+    {
+        var pedestalLeft = this.children('.diagram-part-pedestal-left');
+        if (!pedestalLeft.length) alert("cannot find diagram-part-pedestal-left");
+        var pedestalLeftTransform = pedestalLeft.css('transform');
+        var pedestalLeftTop = transformRotate({x: pedestalLeft.width(), y: 0}, pedestalLeftTransform, {x: 0, y: 0});
+        var pedestalCenter = this.children('.diagram-part-pedestal-center');
+        if (!pedestalCenter.length) alert("cannot find diagram-part-pedestal-center");
+        return -pedestalLeftTop.y + pedestalCenter.width();
+    }
+    else if (this.hasClass('diagram-element-ger'))
+    {
+        var pedestal = this.children('.diagram-part-pedestal');
+        if (!pedestal.length) alert("cannot find diagram-part-pedestal");
+        return pedestal.width();
+    }
+    alert("cannot get pedestal height");
+}
+jQuery.fn.getPedestalWidth = function()
+{
+    if (this.hasClass('diagram-element-ip') ||
+        this.hasClass('diagram-element-np'))
+    {
+        var pedestalLeft = this.children('.diagram-part-pedestal-left');
+        if (!pedestalLeft.length) alert("cannot find diagram-part-pedestal-left");
+        return pedestalLeft.getWidth() * 2;
+    }
+    else if (this.hasClass('diagram-element-ger'))
+    {
+        return 0;
+    }
+    alert("cannot get pedestal width");
+}
+jQuery.fn.getPedestalClauseOffset = function()
+{
+    return {x: this.getPedestalWidth() / 2, y: -this.getPedestalHeight()};
 }
 
 jQuery.fn.setWidth = function()
@@ -395,51 +504,14 @@ jQuery.fn.setWidth = function()
             this.hasClass('diagram-element-conj-pa'))
     {
         // will set width in setOffset with drawLine
+        //var dashed = this.children('.diagram-part-dashed');
+        //if (!dashed.length) alert("cannot find diagram-part-dashed");
+        //dashed.width(dashed.getWordWidth());
     }
 
     // TODO - conj, conj-v, etc
 
     return this;
-}
-jQuery.fn.getPedestalHeight = function()
-{
-    if (this.hasClass('diagram-element-ip') ||
-        this.hasClass('diagram-element-np'))
-    {
-        var pedestalLeft = this.children('.diagram-part-pedestal-left');
-        if (!pedestalLeft.length) alert("cannot find diagram-part-pedestal-left");
-        var pedestalLeftTransform = pedestalLeft.css('transform');
-        var pedestalLeftTop = transformRotate({x: pedestalLeft.width(), y: 0}, pedestalLeftTransform, {x: 0, y: 0});
-        var pedestalCenter = this.children('.diagram-part-pedestal-center');
-        if (!pedestalCenter.length) alert("cannot find diagram-part-pedestal-center");
-        return -pedestalLeftTop.y + pedestalCenter.width();
-    }
-    else if (this.hasClass('diagram-element-ger'))
-    {
-        var pedestal = this.children('.diagram-part-pedestal');
-        if (!pedestal.length) alert("cannot find diagram-part-pedestal");
-        return pedestal.width();
-    }
-    alert("cannot get pedestal height");
-}
-jQuery.fn.getPedestalWidth = function()
-{
-    if (this.hasClass('diagram-element-ip') ||
-        this.hasClass('diagram-element-np'))
-    {
-        var pedestalLeft = this.children('.diagram-part-pedestal-left');
-        if (!pedestalLeft.length) alert("cannot find diagram-part-pedestal-left");
-        return pedestalLeft.getWidth() * 2;
-    }
-    else if (this.hasClass('diagram-element-ger'))
-    {
-        return 0;
-    }
-    alert("cannot get pedestal width");
-}
-jQuery.fn.getPedestalClauseOffset = function()
-{
-    return {x: this.getPedestalWidth() / 2, y: -this.getPedestalHeight()};
 }
 jQuery.fn.setOffset = function()
 {
@@ -677,21 +749,35 @@ jQuery.fn.setOffset = function()
         var horizontal = this.children('.diagram-part-horizontal');
         if (!horizontal.length) alert("cannot find diagram-part-horizontal");
         horizontal.css({'left': getWidthWithAppositives(this.prevAll('.diagram-part'))});
-        // gets splits and clauses
+        // get dashed, splits and clauses
+        var dashed = this.children('.diagram-part-dashed');
+        if (!dashed.length) alert("cannot find diagram-part-dashed");
         var splits = this.children('.diagram-part-split');
         if (!splits.length) alert("cannot find diagram-part-split");
         var clauses = this.children('.diagram-clause');
         if (!clauses.length) alert("cannot find diagram-clause");
-        var height = getHeightWithModifiers(clauses) + (20 * (clauses.length-1)) - getHeightWithModifiers(clauses.last());
-        var top = -(height / splits.length);
+        var height = getBottomHeight(clauses) + getTopHeight(clauses) - getTopHeight(clauses.first());
+        dashed.width(Math.max(height, dashed.getWordWidth()));
+        height = Math.max(height, dashed.width());
+        var top = -height + getTopHeight(clauses.first());
         var left = getWidthWithAppositives(this.prevAll('.diagram-part')) + horizontal.width() + 20;
-        for (var i = 0; i < clauses.length && i < splits.length; i++)
+        // draw dashed line
+        dashed.css({'left': left + 1, 'top': top});
+        // top
+        clauses.first().css({'left': left, 'top': top});
+        splits.first().drawLine(left - 20, 0, left, top);
+        // bottom
+        clauses.last().css({'left': left, top: top + height});
+        splits.last().drawLine(left - 20, 0, left, top + height)
+        // middle (if any)
+        for (var i = 1; i < clauses.length - 1 && i < splits.length - 1; i++)
         {
-            // draw split lines
-            $(splits[i]).drawLine(left - 20, 0, left, top);
-            // offset of clause
-            $(clauses[i]).css({'left': left, 'top': top});
-            top += getHeightWithModifiers($(clauses[i])) + 20;
+            var split = $(splits[i]);
+            var clause = $(clauses[i]);
+            top += getTopHeight(clause);
+            split.drawLine(left - 20 + i, 0, left + i, top);
+            clause.css({'left': left + i, 'top': top});
+            top += getBottomHeight(clause);
         }
     }
 
@@ -1114,6 +1200,7 @@ jQuery.fn.drawPart = function(part, counter)
                 .addClass('diagram-part-vertical')
                 .addClass('diagram-part-line-width-break')
                 .addClass('diagram-part-line-width-skip')
+                .addClass('diagram-part-word-target')
                 .appendTo(this);        
             break;
         case 'conj-io':
@@ -1264,7 +1351,7 @@ jQuery.fn.addPart = function(parts, event)
             alert("something is very wrong... don't know what to do with a " + part);
             return;
     }
-    console.log("addPart: part="+part+" container=" + container.attr('id'));
+    //console.log("addPart: part="+part+" container=" + container.attr('id'));
     return container
         .addElement(part, counter)
         .drawClause();
@@ -1273,7 +1360,7 @@ var diagramElementCounter = 0;
 //var margin = 20;
 jQuery.fn.addWord = function(words, counter)
 {
-    console.log("addWord: this="+this.attr('id')+" "+this.attr('class')+", word="+words.text()+", word.width="+words.width()+", word.height="+words.height());
+    //console.log("addWord: this="+this.attr('id')+" "+this.attr('class')+", word="+words.text()+", word.width="+words.width()+", word.height="+words.height());
     var div = $('<div />')
         .attr('id', 'diagram-element-' + counter)
         .addClass('diagram-word')
@@ -1290,7 +1377,7 @@ jQuery.fn.addWord = function(words, counter)
 }
 jQuery.fn.updateWord = function(words, counter)
 {
-    console.log("updateWord: this="+this.attr('id')+" "+this.attr('class')+", words="+words.text());
+    //console.log("updateWord: this="+this.attr('id')+" "+this.attr('class')+", words="+words.text());
 
     /*if (this.parent().parent().hasClass('.diagram-element-v'))
     {
@@ -1325,7 +1412,7 @@ jQuery.fn.updateWord = function(words, counter)
 }
 jQuery.fn.addOrUpdateWord = function(words)
 {
-    console.log("addOrUpdateWord: this="+this.attr('id')+" "+this.attr('class')+", words="+words.text());
+    //console.log("addOrUpdateWord: this="+this.attr('id')+" "+this.attr('class')+", words="+words.text());
     var counter = diagramElementCounter + 1;
     var diagramWord = this.children('.diagram-word');
     if (diagramWord.length)
@@ -1429,12 +1516,12 @@ $(document).ready(function() {
             var target = $('#diagram .diagram-part-target').closestToOffset({left: event.originalEvent.pageX, top: event.originalEvent.pageY});
             if (target)
             {
-                console.log("#diagram click : " + target.attr('id') + " -> " + activeButtons.text());
+                //console.log("#diagram click : " + target.attr('id') + " -> " + activeButtons.text());
                 target.addPart(activeButtons, event);
             }
             else
             {
-                console.log("#diagram click : " + this.id + " -> " + activeButtons.text());
+                //console.log("#diagram click : " + this.id + " -> " + activeButtons.text());
                 $(this).addPart(activeButtons, event);
             }
             activeButtons.removeClass('active');
@@ -1446,7 +1533,7 @@ $(document).ready(function() {
             var target = $('#diagram .diagram-part-word-target').closestToOffset({left: event.originalEvent.pageX, top: event.originalEvent.pageY});
             if (target)
             {
-                console.log("#diagram click : " + target.attr('id') + " -> " + activeText.text());
+                //console.log("#diagram click : " + target.attr('id') + " -> " + activeText.text());
                 target.addOrUpdateWord(activeText);
                 activeText.removeClass('active');
                 return;
@@ -1455,7 +1542,7 @@ $(document).ready(function() {
         var targetWord = $("#diagram .diagram-word").closestToOffset({left: event.originalEvent.pageX, top: event.originalEvent.pageY});
         if (targetWord)
         {
-            console.log("#diagram click : word=" + targetWord.text());
+            //console.log("#diagram click : word=" + targetWord.text());
             targetWord.addClass('active');
         }
     })
@@ -1469,12 +1556,12 @@ $(document).ready(function() {
                 var target = $('#diagram .diagram-part-target').closestToOffset({left: event.originalEvent.pageX, top: event.originalEvent.pageY}); 
                 if (target)
                 {
-                    console.log("#diagram drop : " + target.attr('id') + " -> " + draggable.text());
+                    //console.log("#diagram drop : " + target.attr('id') + " -> " + draggable.text());
                     target.addPart(draggable, event);
                 }
                 else
                 {
-                    console.log("#diagram drop : " + this.id + " -> " + draggable.text());
+                    //console.log("#diagram drop : " + this.id + " -> " + draggable.text());
                     $(this).addPart(draggable, event);
                 }
                 $(draggable).removeClass('active');
@@ -1485,7 +1572,7 @@ $(document).ready(function() {
                 var target = $('#diagram .diagram-part-word-target').closestToOffset({left: event.originalEvent.pageX, top: event.originalEvent.pageY});
                 if (target)
                 {
-                    console.log("#diagram drop : " + target.attr('id') + " -> " + draggable.text());
+                    //console.log("#diagram drop : " + target.attr('id') + " -> " + draggable.text());
                     target.addOrUpdateWord($(draggable));
                     $(draggable).removeClass('active');
                 }
@@ -1503,11 +1590,11 @@ $(document).ready(function() {
         switch (event.keyCode)
         {
             case 46:
-                console.log("#diagram keyup: delete");
+                //console.log("#diagram keyup: delete");
                 var selectedWord = $("#diagram .diagram-word.active");
                 if (selectedWord.length)
                 {
-                    console.log("#diagram keyup: remove " + selectedWord.text());
+                    //console.log("#diagram keyup: remove " + selectedWord.text());
                     selectedWord.remove();
                 }
                 break;
@@ -1515,14 +1602,14 @@ $(document).ready(function() {
             //    console.log("#diagram keyup: ctrl");
             //    break;
             case 90:
-                console.log("#diagram keyup: z");
+                //console.log("#diagram keyup: z");
                 if (event.ctrlKey)
                 {
-                    console.log("#digram keyup: ctrl-z");
+                    //console.log("#digram keyup: ctrl-z");
                     lastElement = $('.diagram-element-' + diagramElementCounter);
                     if (lastElement.length)
                     {
-                        console.log("#diagram keyup: remove " + lastElement.attr('id'));
+                        //console.log("#diagram keyup: remove " + lastElement.attr('id'));
                         lastElement.remove();
                         --diagramElementCounter;
                     }
