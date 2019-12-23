@@ -646,7 +646,7 @@ jQuery.fn.setOffset = function () {
         // offset of horizontal
         var horizontal = this.children('.diagram-part-horizontal');
         if (!horizontal.length) alert("cannot find diagram-part-horizontal");
-        horizontal.css({ 'left': getWidthWithAppositives(this.prevAll('.diagram-part')) });
+        this.css({ 'left': getWidthWithAppositives(this.prevAll('.diagram-part')) });
         // get dashed, splits and clauses
         var dashed = this.children('.diagram-part-dashed');
         if (!dashed.length) alert("cannot find diagram-part-dashed");
@@ -658,7 +658,7 @@ jQuery.fn.setOffset = function () {
         dashed.width(Math.max(height, dashed.getWordWidth()));
         height = Math.max(height, dashed.width());
         var top = -height + getTopHeight(clauses.first());
-        var left = getWidthWithAppositives(this.prevAll('.diagram-part')) + horizontal.width() + 20;
+        var left = + horizontal.width() + 20;
         // draw dashed line
         dashed.css({ 'left': left + 1, 'top': top });
         // top
@@ -742,10 +742,10 @@ function getPartsText(parts) {
     return part;
 }
 
-jQuery.fn.addElement = function (part, counter) {
+jQuery.fn.addElement = function (part, counter, conj) {
     return $('<div />')
         .css({ 'min-width': 50 })
-        .drawPart(part, counter)
+        .drawPart(part, counter, conj)
         .addClass('diagram-part')
         .addClass('diagram-element')
         .addClass('diagram-element-' + part)
@@ -754,7 +754,7 @@ jQuery.fn.addElement = function (part, counter) {
         .appendTo(this)
         .updateCounter(counter);
 }
-jQuery.fn.drawPart = function (part, counter) {
+jQuery.fn.drawPart = function (part, counter, conj) {
     switch (part) {
         case 's':
             // on hortzontal before vertical bisect
@@ -777,15 +777,17 @@ jQuery.fn.drawPart = function (part, counter) {
                 .addClass('diagram-part-target')
                 .addClass('diagram-part-word-target')
                 .appendTo(this);
-            $('<div />')
-                .addClass('diagram-part-line')
-                .css({ 'transform': 'rotate(90deg)' })
-                .width(25 + 3)
-                .offset({ left: 0, top: -20 })
-                .attr('id', 'diagram-part-' + part + '-vertical')
-                .addClass('diagram-part-vertical')
-                .addClass('diagram-part-line-height-skip')
-                .appendTo(this);
+            if (!conj) {
+                $('<div />')
+                    .addClass('diagram-part-line')
+                    .css({ 'transform': 'rotate(90deg)' })
+                    .width(25 + 3)
+                    .offset({ left: 0, top: -20 })
+                    .attr('id', 'diagram-part-' + part + '-vertical')
+                    .addClass('diagram-part-vertical')
+                    .addClass('diagram-part-line-height-skip')
+                    .appendTo(this);
+            }
             break;
         case 'do':
             // on horizontal after vertical stop
@@ -798,15 +800,17 @@ jQuery.fn.drawPart = function (part, counter) {
                 .addClass('diagram-part-word-target')
                 .addClass('diagram-part-line-width-break')
                 .appendTo(this);
-            $('<div />')
-                .addClass('diagram-part-line')
-                .css({ 'transform': 'rotate(90deg)' })
-                .width(20 + 3)
-                .offset({ left: 0, top: -20 })
-                .attr('id', 'diagram-part-do-vertical')
-                .addClass('diagram-part-vertical')
-                .addClass('diagram-part-line-height-skip')
-                .appendTo(this);
+            if (!conj) {
+                $('<div />')
+                    .addClass('diagram-part-line')
+                    .css({ 'transform': 'rotate(90deg)' })
+                    .width(20 + 3)
+                    .offset({ left: 0, top: -20 })
+                    .attr('id', 'diagram-part-do-vertical')
+                    .addClass('diagram-part-vertical')
+                    .addClass('diagram-part-line-height-skip')
+                    .appendTo(this);
+            }
             break;
         case 'pn':
         case 'pa':
@@ -819,15 +823,17 @@ jQuery.fn.drawPart = function (part, counter) {
                 .addClass('diagram-part-target')
                 .addClass('diagram-part-word-target')
                 .appendTo(this);
-            $('<div />')
-                .addClass('diagram-part-line')
-                .css({ 'transform': 'rotate(60deg)' })
-                .width(20 + 3)
-                .offset({ left: 0, top: -20 })
-                .attr('id', 'diagram-part-do-vertical')
-                .addClass('diagram-part-vertical')
-                .addClass('diagram-part-line-height-skip')
-                .appendTo(this);
+            if (!conj) {
+                $('<div />')
+                    .addClass('diagram-part-line')
+                    .css({ 'transform': 'rotate(60deg)' })
+                    .width(20 + 3)
+                    .offset({ left: 0, top: -20 })
+                    .attr('id', 'diagram-part-do-vertical')
+                    .addClass('diagram-part-vertical')
+                    .addClass('diagram-part-line-height-skip')
+                    .appendTo(this);
+            }
             break;
         case 'part':
             // curved word on bent, slanted below word
@@ -869,7 +875,7 @@ jQuery.fn.drawPart = function (part, counter) {
             if (part === 'prep') {
                 diagonal.addClass('diagram-part-word-target');
             }
-            this.addElement('prep-o', counter);
+            this.addElement('prep-o', counter, conj);
             break;
         case 'io-o':
         case 'prep-o':
@@ -927,8 +933,8 @@ jQuery.fn.drawPart = function (part, counter) {
             var clause = $('<div />')
                 .addClass('diagram-clause')
                 .appendTo(this);
-            clause.addElement('ip-v-d', counter);
-            clause.addElement('ip-v-h', counter);
+            clause.addElement('ip-v-d', counter, conj);
+            clause.addElement('ip-v-h', counter, conj);
             break;
         case 'ip-v-d':
             $('<div />')
@@ -984,8 +990,8 @@ jQuery.fn.drawPart = function (part, counter) {
             var clause = $('<div />')
                 .addClass('diagram-clause')
                 .appendTo(this);
-            clause.addElement('s', counter);
-            clause.addElement('v', counter);
+            clause.addElement('s', counter, conj);
+            clause.addElement('v', counter, conj);
             break;
         case 'ger':
             // on pedestal beginning with staircase
@@ -999,7 +1005,7 @@ jQuery.fn.drawPart = function (part, counter) {
             var gerund = $('<div />')
                 .addClass('gerund-phrase')
                 .appendTo(this);
-            gerund.addElement('ger-v', counter);
+            gerund.addElement('ger-v', counter, conj);
             // gerund does not require a do, so don't automatically add one
             break;
         case 'ger-v':
@@ -1036,7 +1042,7 @@ jQuery.fn.drawPart = function (part, counter) {
             var gerund = $('<div />')
                 .addClass('gerund-phrase')
                 .appendTo(this);
-            gerund.addElement('ger-v', counter);
+            gerund.addElement('ger-v', counter, conj);
             break;
         case 'exp':
             // on horizontal connected to modified word via broken - introduces a noun phrase
@@ -1076,6 +1082,42 @@ jQuery.fn.drawPart = function (part, counter) {
                 .attr('id', 'diagram-part-conj-horizontal')
                 .addClass('diagram-part-horizontal')
                 .appendTo(this);
+            switch (part) {
+                case 'conj-v':
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .css({ 'transform': 'rotate(90deg)' })
+                        .width(25 + 3)
+                        .offset({ left: 0, top: -20 })
+                        .attr('id', 'diagram-part-' + part + '-vertical')
+                        .addClass('diagram-part-vertical')
+                        .addClass('diagram-part-line-height-skip')
+                        .appendTo(this);
+                    break;
+                case 'conj-do':
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .css({ 'transform': 'rotate(90deg)' })
+                        .width(20 + 3)
+                        .offset({ left: 0, top: -20 })
+                        .attr('id', 'diagram-part-do-vertical')
+                        .addClass('diagram-part-vertical')
+                        .addClass('diagram-part-line-height-skip')
+                        .appendTo(this);
+                    break;
+                case 'conj-pn':
+                case 'conj-pa':
+                    $('<div />')
+                        .addClass('diagram-part-line')
+                        .css({ 'transform': 'rotate(60deg)' })
+                        .width(20 + 3)
+                        .offset({ left: 0, top: -20 })
+                        .attr('id', 'diagram-part-do-vertical')
+                        .addClass('diagram-part-vertical')
+                        .addClass('diagram-part-line-height-skip')
+                        .appendTo(this);
+                    break;
+            }
             var split1 = $('<div />')
                 .addClass('diagram-part-line')
                 .attr('id', 'diagram-part-split-1')
@@ -1084,7 +1126,7 @@ jQuery.fn.drawPart = function (part, counter) {
             var clause1 = $('<div />')
                 .addClass('diagram-clause')
                 .appendTo(this);
-            clause1.addElement(part.substring(5), counter);
+            clause1.addElement(part.substring(5), counter, true);
             var split2 = $('<div />')
                 .addClass('diagram-part-line')
                 .attr('id', 'diagram-part-split-2')
@@ -1093,7 +1135,7 @@ jQuery.fn.drawPart = function (part, counter) {
             var clause2 = $('<div />')
                 .addClass('diagram-clause')
                 .appendTo(this);
-            clause2.addElement(part.substring(5), counter);
+            clause2.addElement(part.substring(5), counter, true);
             $('<div />')
                 .addClass('diagram-part-dashed-line')
                 .css({ 'transform': 'rotate(90deg)' })
@@ -1119,8 +1161,8 @@ jQuery.fn.drawPart = function (part, counter) {
         case 'conj-art':
         case 'conj-pos':
             this.addClass('diagram-element-conj');
-            this.addElement(part.substring(5), counter);
-            this.addElement(part.substring(5), counter);
+            this.addElement(part.substring(5), counter, true);
+            this.addElement(part.substring(5), counter, true);
             $('<div />')
                 .addClass('diagram-part-dashed-line')
                 .attr('id', 'diagram-part-conj-dashed-horizontal')
@@ -1145,18 +1187,18 @@ jQuery.fn.drawPart = function (part, counter) {
     return this;
 }
 jQuery.fn.addPart = function (parts, event) {
-    var container = this;
+    var parentElement = this;
     var part = getPartsText(parts);
     var counter = diagramElementCounter + 1;
     switch (part) {
         case 's':
         case 'conj-s':
             // a subject requires a new clause - TODO - upgrade s to conj-s
-            container = $('#diagram');
-            container = $('<div />')
+            parentElement = $('#diagram');
+            parentElement = $('<div />')
                 .addClass('diagram-clause')
                 .offset({ left: event.originalEvent.offsetX, top: event.originalEvent.offsetY })
-                .appendTo(container);
+                .appendTo(parentElement);
             break;
         case 'v':
         case 'conj-v':
@@ -1168,20 +1210,20 @@ jQuery.fn.addPart = function (parts, event) {
         case 'conj-pa':
             // a verb, verb phrase, direct object, predicate nominative, or predicate adjective
             // applies to an existing clause, participle, or gerund phrase
-            container = container.closest('.diagram-element-part, .gerund-phrase, .diagram-clause').first();
-            if (!container.length) {
+            parentElement = parentElement.closest('.diagram-element-part, .gerund-phrase, .diagram-clause').first();
+            if (!parentElement.length) {
                 alert("cannot add " + part + ", clause required")
                 return;
             }
             switch (part) {
                 case 'v':
                     // there can only be a single verb or verb phrase - TODO - upgrade v to conj-v
-                    if (container.children('.diagram-element-v').length) {
+                    if (parentElement.children('.diagram-element-v').length) {
                         alert("cannot add a second " + part + " to the clause");
                         return;
                     }
                     // a verb or verb phrase requires an existing subject - TODO - or conj-s
-                    if (!container.children('.diagram-element-s').length) {
+                    if (!parentElement.children('.diagram-element-s').length) {
                         alert("cannot add a " + part + ", subject required");
                         return;
                     }
@@ -1191,16 +1233,16 @@ jQuery.fn.addPart = function (parts, event) {
                 case 'pa':
                     // there can only be a single direct object, predicate nominative, or predicate adjective
                     // TODO - upgrade to conj-do, conj-pa, conj-pa
-                    if (container.children('.diagram-element-do, .diagram-element-pn, .diagram-element-pa').length) {
+                    if (parentElement.children('.diagram-element-do, .diagram-element-pn, .diagram-element-pa').length) {
                         alert("cannot add a second " + part + " to the clause");
                         return;
                     }
                     // a direct object, predicate nominative, or predicate adjective
                     // requires an existing verb or verb phrase
-                    if (!container.children('.diagram-element-v').length &&
-                        !container.hasClass('diagram-element-part') &&
-                        !container.children('.diagram-element-ip-v-h').length &&
-                        !container.children('.diagram-element-ger-v').length) {
+                    if (!parentElement.children('.diagram-element-v').length &&
+                        !parentElement.hasClass('diagram-element-part') &&
+                        !parentElement.children('.diagram-element-ip-v-h').length &&
+                        !parentElement.children('.diagram-element-ger-v').length) {
                         alert("cannot add a " + part + ", verb/verb-phrase required");
                         return;
                     }
@@ -1210,8 +1252,8 @@ jQuery.fn.addPart = function (parts, event) {
         case 'io':
             // TODO - case 'conj-io':
             // an indirect object requries a verb or verb phrase
-            container = container.closest('.diagram-element-v, .diagram-element-vp').first();
-            if (!container.length) {
+            parentElement = parentElement.closest('.diagram-element-v, .diagram-element-vp').first();
+            if (!parentElement.length) {
                 alert("cannot add an indirect object, verb/verb-phrase required");
                 return;
             }
@@ -1219,22 +1261,20 @@ jQuery.fn.addPart = function (parts, event) {
         case 'exp':
             // TODO - case 'conj-exp':
             // an expletive requires a noun phrase
-            container = container.closest('.diagram-element-np').first().children('.diagram-clause');
-            if (!container.length) {
+            parentElement = parentElement.closest('.diagram-element-np').first().children('.diagram-clause');
+            if (!parentElement.length) {
                 alert("cannot add an explective, noun phrase required");
                 return;
             }
             break;
         case 'conj':
             // a conjunction applies to two or more existing parts
-            // TODO - upgrade container to conj-<container-part> OR if container is conj-<part> add another <part> to conj-<part>
+            // TODO - upgrade parentElement to conj-<container-part> OR if parentElement is conj-<part> add another <part> to conj-<part>
             alert("cannot add a conjunction, not implemented");
             return;
             break;
         case 'app':
         // TODO - case 'conj-app':
-        // TODO - more than one appositive
-        //break;
         case 'part':
         // TODO - case 'conj-part':
         case 'adj':
@@ -1247,7 +1287,7 @@ jQuery.fn.addPart = function (parts, event) {
         case 'conj-pos':
         case 'prep':
         // TODO - case 'conj-prep':
-        // TODO - if container is prep, then upgrade prep to prep-ger
+        // TODO - if parentElement is prep, then upgrade prep to prep-ger
         case 'ip':
         // TODO - case 'conj-ip':
         case 'ger':
@@ -1255,12 +1295,11 @@ jQuery.fn.addPart = function (parts, event) {
         case 'prep-ger':
         // TODO - case 'conj-prep-ger':
         case 'np':
-            // TODO - case 'conj-np':
+        // TODO - case 'conj-np':
             // an indirect object, participal, adjective, adverb, article, possessive, preposition, appositive, infinitive phrase, gerund, explective, or noun phrase
             // requires an existing part
-            // TODO - conjunctions
-            container = container.closest('.diagram-part').not('.diagram-element-part');
-            if (!container.length) {
+            parentElement = parentElement.closest('.diagram-part').not('.diagram-element-part');
+            if (!parentElement.length) {
                 alert("cannot add a " + part + ", element required")
                 return;
             }
@@ -1270,8 +1309,8 @@ jQuery.fn.addPart = function (parts, event) {
             return;
     }
     //console.log("addPart: part="+part+" container=" + container.attr('id'));
-    return container
-        .addElement(part, counter)
+    return parentElement
+        .addElement(part, counter, false)
         .drawClause();
 }
 var diagramElementCounter = 0;
