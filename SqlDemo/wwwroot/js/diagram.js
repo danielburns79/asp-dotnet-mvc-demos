@@ -435,8 +435,15 @@ jQuery.fn.setWidth = function () {
         if (!dashed.length) alert("cannot find diagram-part-dashed");
         dashed.width(dashed.getWordWidth());
     }
+    else if (this.hasClass('diagram-element-conj-io') ||
+        this.hasClass('diagram-element-conj-prep')) {
+        var dashed = this.children('.diagram-part-dashed');
+        if (!dashed.length) alert("cannot find diagram-part-dashed");
+        dashed.width(dashed.getWordWidth());
+        // the width may be increased in setOffset()
+    }
 
-    // TODO - conj, conj-io, conj-prep, conj-app, conj-ip, conj-ger, conj-exp, conj-np
+    // TODO - conj, conj-app, conj-ip, conj-ger, conj-exp, conj-np
 
     return this;
 }
@@ -693,8 +700,24 @@ jQuery.fn.setOffset = function () {
         elements.last().css({ 'left': offset + dashed.width() });
         // TODO - more than two elements
     }
+    else if (this.hasClass('diagram-element-conj-io') ||
+        this.hasClass('diagram-element-conj-prep')) {
+        var dashed = this.children('.diagram-part-dashed');
+        if (!dashed.length) alert("cannot find diagram-part-dashed");
+        var elements = this.children('.diagram-element');
+        if (!elements.length) alert("cannot find diagram-element");
+        var height = dashed.getWordHeight();
+        var offset = getWidthWithModifiers(this.prevAll('.diagram-part'), false) + /*space*/ 20;
+        var p = transformRotate({ x: offset + height, y: 0 }, elements.first().children('.diagram-part-line').css('transform'), { x: offset, y: 0 });
+        dashed.css({ 'left': p.x, 'top': p.y });
+        // increase the dashed width if necessary
+        dashed.width(Math.max(dashed.width(), getWidthWithModifiers(elements, true) - getWidthWithModifiers(elements.last(), true)));
+        elements.first().css({ 'left': offset });
+        elements.last().css({ 'left': offset + dashed.width() });
+        // TODO - more than two elements
+    }
 
-    // TODO - conj, conj-io, conj-prep, conj-app, conj-ip, conj-ger, conj-exp, conj-np
+    // TODO - conj, conj-app, conj-ip, conj-ger, conj-exp, conj-np
 
     return this;
 }
@@ -1147,14 +1170,23 @@ jQuery.fn.drawPart = function (part, counter, conj) {
                 .addClass('diagram-part-word-target')
                 .appendTo(this);
             break;
-        case 'conj-io':
-        case 'conj-prep':
-            // TODO
-            alert("can't draw conj-io/prep - not implemented");
-            break;
         case 'conj-part':
             // TODO
             alert("can't draw conj-part - not implemetned");
+            break;
+        case 'conj-io':
+        case 'conj-prep':
+            this.addClass('diagram-element-conj');
+            this.addElement(part.substring(5), counter, true);
+            this.addElement(part.substring(5), counter, true);
+            $('<div />')
+                .addClass('diagram-part-dashed-line')
+                .attr('id', 'diagram-part-conj-dashed-horizontal')
+                .addClass('diagram-part-dashed')
+                .addClass('diagram-part-line')
+                .addClass('diagram-part-line-width-skip')
+                .addClass('diagram-part-word-target')
+                .appendTo(this);
             break;
         case 'conj-adj':
         case 'conj-adv':
@@ -1250,7 +1282,7 @@ jQuery.fn.addPart = function (parts, event) {
             }
             break;
         case 'io':
-            // TODO - case 'conj-io':
+        case 'conj-io':
             // an indirect object requries a verb or verb phrase
             parentElement = parentElement.closest('.diagram-element-v, .diagram-element-vp').first();
             if (!parentElement.length) {
@@ -1286,11 +1318,11 @@ jQuery.fn.addPart = function (parts, event) {
         case 'pos':
         case 'conj-pos':
         case 'prep':
-        // TODO - case 'conj-prep':
-        // TODO - if parentElement is prep, then upgrade prep to prep-ger
+        case 'conj-prep':
         case 'ip':
         // TODO - case 'conj-ip':
         case 'ger':
+        // TODO - if parentElement is prep, then upgrade prep to prep-ger
         // TODO - case 'conj-ger':
         case 'prep-ger':
         // TODO - case 'conj-prep-ger':
