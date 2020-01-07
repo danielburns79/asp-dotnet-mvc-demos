@@ -94,8 +94,6 @@ jQuery.fn.drawLine = function (x1, y1, x2, y2) {
     return this;
 }
 
-// TODO - refactor creating/adding/drawing elements into classes
-
 function maxModifiersHeight(elements) {
     var height = 0;
     elements.each(function () {
@@ -346,6 +344,22 @@ jQuery.fn.getPedestalWidth = function () {
 jQuery.fn.getPedestalClauseOffset = function () {
     return { x: this.getPedestalWidth() / 2, y: -this.getPedestalHeight() };
 }
+
+// TODO - refactor creating/adding/drawing elements into classes
+
+/*class DiagramElement {
+    setWidth() { }
+    setOffset() { }
+    setWidths() { }
+    setoffsetes() { }
+    drawClause() { }
+    addElement(part, counter, conj) { }
+    drawPart(part, counter, conj) { }
+    addPart(parts, event) { }
+    addWord(words, counter) { }
+    updateWord(words, counter) { }
+    addOrUpdateWord(words) { }
+}*/
 
 jQuery.fn.setWidth = function () {
     if (this.hasClass('diagram-word')) {
